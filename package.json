@@ -1,0 +1,28 @@
+{
+  "name": "kita_wms_tcc",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ybrittoom/KITA_WMS_TCC.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Ybrittoom/KITA_WMS_TCC/issues"
+  },
+  "homepage": "https://github.com/Ybrittoom/KITA_WMS_TCC#readme",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "nodemon": "^3.1.14",
+    "pg": "^8.23.0"
+  }
+}
