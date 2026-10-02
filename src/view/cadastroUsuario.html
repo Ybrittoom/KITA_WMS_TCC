@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestão de Usuários - KITA WMS</title>
+  <!-- Fonte Inter do Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/src/public/css/cadastroUsuario.css"></head>
+<body>
+
+  <!-- Layout Principal -->
+  <div class="app-layout">
+    
+    <!-- Cabeçalho Superior / Identificação da Empresa Logada -->
+    <header class="app-header">
+      <div class="header-content">
+        <div class="brand-group">
+          <span class="brand-badge">KITA WMS</span>
+          <div class="company-info">
+            <span class="company-label">Empresa Logada</span>
+            <h2 class="company-name" id="current-company">Logística & Distribuição Silva LTDA</h2>
+          </div>
+        </div>
+
+        <div class="user-profile">
+          <div class="avatar">AD</div>
+          <div class="user-details">
+            <span class="user-name">Administrador</span>
+            <span class="user-role">Gestor Geral</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Conteúdo Principal -->
+    <main class="main-content">
+      
+      <!-- Barra Superior de Ações -->
+      <section class="page-actions">
+        <div class="page-title-group">
+          <h1 class="page-title">Equipe & Operadores</h1>
+          <p class="product-count-text">
+            Total de <strong id="user-count">3</strong> usuários cadastrados para gerenciar o estoque desta empresa.
+          </p>
+        </div>
+
+        <button type="button" class="btn-primary" id="btn-open-user-modal">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          Cadastrar Usuário
+        </button>
+      </section>
+
+      <!-- Tabela / Lista de Usuários -->
+      <section class="table-card">
+        <div class="table-responsive">
+          <table class="products-table">
+            <thead>
+              <tr>
+                <th>Usuário</th>
+                <th>E-mail</th>
+                <th>Cargo / Função</th>
+                <th>Empresa Vinculada</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="users-tbody">
+              <tr>
+                <td>
+                  <div class="user-cell">
+                    <div class="avatar-small">CS</div>
+                    <span class="product-name">Carlos Silva</span>
+                  </div>
+                </td>
+                <td>carlos.silva@empresa.com</td>
+                <td><span class="role-badge">Gestor de Estoque</span></td>
+                <td><strong>Logística & Distribuição Silva LTDA</strong></td>
+                <td><span class="status-badge status-ok">Ativo</span></td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="user-cell">
+                    <div class="avatar-small">MA</div>
+                    <span class="product-name">Mariana Almeida</span>
+                  </div>
+                </td>
+                <td>mariana.a@empresa.com</td>
+                <td><span class="role-badge">Operadora de Almoxarifado</span></td>
+                <td><strong>Logística & Distribuição Silva LTDA</strong></td>
+                <td><span class="status-badge status-ok">Ativo</span></td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="user-cell">
+                    <div class="avatar-small">RO</div>
+                    <span class="product-name">Roberto Oliveira</span>
+                  </div>
+                </td>
+                <td>roberto.o@empresa.com</td>
+                <td><span class="role-badge">Conferente de Expedição</span></td>
+                <td><strong>Logística & Distribuição Silva LTDA</strong></td>
+                <td><span class="status-badge status-ok">Ativo</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Modal de Cadastro de Usuário -->
+  <div class="modal-overlay" id="user-modal-overlay">
+    <div class="modal-card">
+      
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title">Novo Usuário</h2>
+          <p class="modal-subtitle">Cadastre um operador para gerenciar o estoque da empresa logada.</p>
+        </div>
+        <button type="button" class="btn-close" id="btn-close-user-modal" aria-label="Fechar">&times;</button>
+      </div>
+
+      <form class="modal-form" id="user-form" onsubmit="return false;">
+        
+        <!-- Campo Informativo da Empresa Logada (Somente Leitura) -->
+        <div class="input-group">
+          <label for="empresa_representada">Empresa Representada</label>
+          <input 
+            type="text" 
+            id="empresa_representada" 
+            name="empresa_representada" 
+            value="Logística & Distribuição Silva LTDA" 
+            readonly 
+            class="input-disabled"
+          >
+          <span class="field-help">O usuário será automaticamente vinculado à empresa ativa na sessão.</span>
+        </div>
+
+        <div class="input-group">
+          <label for="user_nome">Nome Completo</label>
+          <input 
+            type="text" 
+            id="user_nome" 
+            name="user_nome" 
+            placeholder="Ex: João Pedro Santos" 
+            required
+          >
+        </div>
+
+        <div class="form-row">
+          <div class="input-group">
+            <label for="user_email">E-mail Corporativo</label>
+            <input 
+              type="email" 
+              id="user_email" 
+              name="user_email" 
+              placeholder="joao.santos@empresa.com" 
+              required
+            >
+          </div>
+
+          <div class="input-group">
+            <label for="user_cargo">Cargo / Função</label>
+            <input 
+              type="text" 
+              id="user_cargo" 
+              name="user_cargo" 
+              placeholder="Ex: Conferente de Estoque" 
+              required
+            >
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" id="btn-cancel-user-modal">Cancelar</button>
+          <button type="submit" class="btn-primary">Salvar Usuário</button>
+        </div>
+
+      </form>
+
+    </div>
+  </div>
+
+  <script src="../public/js/cadastroUsuario.js"></script>
+</body>
+</html>

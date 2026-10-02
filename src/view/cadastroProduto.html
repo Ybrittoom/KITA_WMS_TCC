@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestão de Produtos - KITA WMS</title>
+  <!-- Fonte Inter do Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../public/css/cadastroProduto.css">
+</head>
+<body>
+
+  <!-- Layout Principal -->
+  <div class="app-layout">
+    
+    <!-- Cabeçalho Superior / Identificação da Empresa -->
+    <header class="app-header">
+      <div class="header-content">
+        <div class="brand-group">
+          <span class="brand-badge">KITA WMS</span>
+          <div class="company-info">
+            <span class="company-label">Empresa Logada</span>
+            <h2 class="company-name">Logística & Distribuição Silva LTDA</h2>
+          </div>
+        </div>
+
+        <div class="user-profile">
+          <div class="avatar">AD</div>
+          <div class="user-details">
+            <span class="user-name">Administrador</span>
+            <span class="user-role">Gestor de Estoque</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Conteúdo da Página -->
+    <main class="main-content">
+      
+      <!-- Barra Superior de Ações -->
+      <section class="page-actions">
+        <div class="page-title-group">
+          <h1 class="page-title">Produtos Cadastrados</h1>
+          <p class="product-count-text">
+            Total de <strong id="total-count">3</strong> produtos cadastrados na sua empresa.
+          </p>
+        </div>
+
+        <button type="button" class="btn-primary" id="btn-open-modal">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          Cadastrar Produto
+        </button>
+      </section>
+
+      <!-- Tabela / Lista de Produtos -->
+      <section class="table-card">
+        <div class="table-responsive">
+          <table class="products-table">
+            <thead>
+              <tr>
+                <th>Nome do Produto</th>
+                <th>SKU</th>
+                <th>Estoque Atual</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="products-tbody">
+              <tr>
+                <td>
+                  <span class="product-name">Caixa Organizadora Industrial 50L</span>
+                </td>
+                <td><code class="sku-badge">CX-ORG-50L</code></td>
+                <td><span class="stock-value">120 un</span></td>
+                <td><span class="status-badge status-ok">Normal</span></td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="product-name">Palete de Madeira Padronizado PBR</span>
+                </td>
+                <td><code class="sku-badge">PL-MAD-PBR</code></td>
+                <td><span class="stock-value">15 un</span></td>
+                <td><span class="status-badge status-warning">Estoque Baixo</span></td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="product-name">Fita Adesiva Transparente 48mmx50m</span>
+                </td>
+                <td><code class="sku-badge">FT-TR-4850</code></td>
+                <td><span class="stock-value">450 un</span></td>
+                <td><span class="status-badge status-ok">Normal</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Modal de Cadastro de Produto -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal-card">
+      
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title">Novo Produto</h2>
+          <p class="modal-subtitle">Preencha as informações para cadastrar na empresa logada.</p>
+        </div>
+        <button type="button" class="btn-close" id="btn-close-modal" aria-label="Fechar">&times;</button>
+      </div>
+
+      <form class="modal-form" id="product-form" onsubmit="return false;">
+        
+        <div class="input-group">
+          <label for="nome">Nome do Produto</label>
+          <input 
+            type="text" 
+            id="nome" 
+            name="nome" 
+            placeholder="Ex: Embalagem Térmica A3" 
+            required
+          >
+        </div>
+
+        <div class="form-row">
+          <div class="input-group">
+            <label for="sku">Código SKU</label>
+            <input 
+              type="text" 
+              id="sku" 
+              name="sku" 
+              placeholder="Ex: EMB-TERM-A3" 
+              required
+            >
+          </div>
+
+          <div class="input-group">
+            <label for="estoque_minimo">Estoque Mínimo</label>
+            <input 
+              type="number" 
+              id="estoque_minimo" 
+              name="estoque_minimo" 
+              placeholder="0" 
+              min="0"
+              required
+            >
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" id="btn-cancel-modal">Cancelar</button>
+          <button type="submit" class="btn-primary">Salvar Produto</button>
+        </div>
+
+      </form>
+
+    </div>
+  </div>
+
+  <script src="../public/js/cadastroProduto.js"></script>
+</body>
+</html>
