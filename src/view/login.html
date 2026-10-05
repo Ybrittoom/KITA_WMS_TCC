@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/src/public/css/login.css">
+  <link rel="stylesheet" href="/public/css/login.css">
 </head>
 <body>
 
@@ -19,14 +19,15 @@
       <p class="login-subtitle">Acesse sua conta para gerenciar seu estoque e operações de armazém em tempo real.</p>
     </div>
 
-    <form class="login-form" action="#" method="POST" onsubmit="return false;">
+    <form class="login-form" id="login-form">
       <div class="input-group">
         <label for="email">E-mail corporativo</label>
         <input 
           type="email" 
           id="email" 
           name="email" 
-          placeholder="seu.nome@empresa.com" 
+          placeholder="contato@empresa.com"
+          autocomplete="username"
           required
         >
       </div>
@@ -37,10 +38,11 @@
           <a href="#" class="forgot-password">Esqueceu a senha?</a>
         </div>
         <input 
-          type="password" 
+          type="password"
           id="senha" 
           name="senha" 
           placeholder="••••••••" 
+          autocomplete="current-password"
           required
         >
       </div>
@@ -50,7 +52,8 @@
         <label for="remember">Lembrar deste dispositivo</label>
       </div>
 
-      <button type="submit" class="btn-primary">Entrar no Sistema</button>
+      <button type="submit" class="btn-primary" id="login-button">Entrar no Sistema</button>
+      <p class="login-message" id="login-message" role="status" aria-live="polite"></p>
     </form>
 
     <footer class="login-footer">
@@ -58,5 +61,6 @@
     </footer>
   </main>
 
+  <script src="/public/js/login.js" defer></script>
 </body>
 </html>
