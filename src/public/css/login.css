@@ -182,12 +182,20 @@
     line-height: 1.4;
   }
 
+  .login-message:empty {
+    display: none;
+  }
+
   .login-message[data-state="error"] {
     color: #b91c1c;
   }
 
   .login-message[data-state="success"] {
     color: #15803d;
+  }
+
+  .login-message[data-state="info"] {
+    color: var(--text-muted);
   }
   
   /* Rodapé */

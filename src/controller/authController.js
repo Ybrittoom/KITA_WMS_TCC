@@ -1,6 +1,7 @@
 import { autenticarEmpresa } from "../service/authService.js";
 
 export async function loginEmpresa(req, res) {
+  // Normalizar o e-mail evita diferenças por espaços ou letras maiúsculas.
   const email = typeof req.body?.email === "string"
     ? req.body.email.trim().toLowerCase()
     : "";
@@ -10,6 +11,7 @@ export async function loginEmpresa(req, res) {
     return res.status(400).json({ erro: "Informe o e-mail e a senha da empresa." });
   }
 
+  // O limite de 72 bytes acompanha o limite de entrada do bcrypt.
   if (email.length > 254 || Buffer.byteLength(senha, "utf8") > 72) {
     return res.status(400).json({ erro: "E-mail ou senha em formato inválido." });
   }
