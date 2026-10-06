@@ -1,20 +1,25 @@
 import pool from "../config/database.js";
 
-/** Localiza a empresa associada ao usuário autenticado pelo Supabase Auth. */
-export async function buscarVinculoEmpresaPorAuthId(authId) {
-  // O auth_id vem do usuário verificado pelo Supabase, nunca do corpo da requisição.
+/** Busca a conta de login da empresa pelo e-mail. */
+export async function buscarEmpresaPorEmail(email) {
   const resultado = await pool.query(
-    `SELECT
-       u.id AS usuario_id,
-       u.nome AS usuario_nome,
-       u.empresa_id,
-       e.nome AS empresa_nome
-     FROM usuarios AS u
-     INNER JOIN empresas AS e ON e.id = u.empresa_id
-     WHERE u.auth_id = $1::uuid
+    `SELECT id AS empresa_id, nome AS empresa_nome, email, senha_hash
+     FROM public.empresas
+     WHERE lower(email) = $1
      LIMIT 1`,
-    [authId]
+    [email]
   );
+  return resultado.rows[0] ?? null;
+}
 
+/** Recarrega os dados da empresa em cada requisicao autenticada. */
+export async function buscarEmpresaPorId(empresaId) {
+  const resultado = await pool.query(
+    `SELECT id AS empresa_id, nome AS empresa_nome, email
+     FROM public.empresas
+     WHERE id = $1
+     LIMIT 1`,
+    [empresaId]
+  );
   return resultado.rows[0] ?? null;
 }
