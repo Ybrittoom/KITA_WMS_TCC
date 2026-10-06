@@ -1,18 +1,25 @@
--- Copie e execute no DBeaver conectado ao seu banco local.
--- Este script altera somente a tabela empresas do banco selecionado.
+-- O login de e-mail/senha agora é gerenciado pelo Supabase Auth.
+-- Não adicione email ou senha_hash à tabela empresas.
+--
+-- 1) No Supabase Dashboard, crie o usuário em Authentication > Users.
+-- 2) Copie o UUID desse usuário.
+-- 3) Associe a conta a public.usuarios. Use UMA das opções abaixo.
+--
+-- UPDATE public.usuarios
+-- SET auth_id = 'UUID_DO_AUTH_USER'
+-- WHERE id = ID_DO_USUARIO;
+--
+-- Se ainda não existir uma linha de usuario para essa pessoa, use o INSERT:
+-- INSERT INTO public.usuarios (empresa_id, auth_id, nome, cargo)
+-- VALUES (ID_DA_EMPRESA, 'UUID_DO_AUTH_USER', 'Nome do usuario', 'Cargo');
+--
+-- Substitua os valores de exemplo antes de executar no DBeaver.
+-- Cada auth_id só pode estar associado a um usuário do sistema.
+-- A empresa será obtida de usuarios.empresa_id, não de auth.users.
+-- O script do esquema atualizado precisa ter sido aplicado antes deste UPDATE.
 
-ALTER TABLE empresas
-  ADD COLUMN IF NOT EXISTS email text,
-  ADD COLUMN IF NOT EXISTS senha_hash text;
-
-CREATE UNIQUE INDEX IF NOT EXISTS idx_empresas_email_lower
-  ON empresas (LOWER(email))
-  WHERE email IS NOT NULL;
-
--- Antes do UPDATE abaixo, gere um hash bcrypt para a senha no terminal:
--- node --input-type=module -e "import bcrypt from 'bcryptjs'; console.log(await bcrypt.hash('SUA_SENHA', 12))"
--- Substitua os três valores de exemplo e execute o UPDATE separadamente.
--- Não salve a senha em texto puro em senha_hash.
--- UPDATE empresas
--- SET email = 'contato@empresa.com', senha_hash = 'COLE_AQUI_O_HASH_BCRYPT'
--- WHERE id = ID_DA_EMPRESA;
+-- Conferir a associação depois do UPDATE:
+-- SELECT u.id AS usuario_id, u.nome AS usuario, u.empresa_id, e.nome AS empresa
+-- FROM public.usuarios AS u
+-- JOIN public.empresas AS e ON e.id = u.empresa_id
+-- WHERE u.auth_id = 'UUID_DO_AUTH_USER';
