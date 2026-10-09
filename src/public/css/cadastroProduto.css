@@ -147,6 +147,28 @@
   .product-count-text strong {
     color: var(--text-main);
   }
+
+  .page-message,
+  .form-message {
+    min-height: 1.25rem;
+    margin: 0 0 16px;
+    color: #b91c1c;
+    font-size: 0.9rem;
+  }
+
+  .page-message:empty,
+  .form-message:empty {
+    display: none;
+  }
+
+  .page-message[data-state="success"] {
+    color: #15803d;
+  }
+
+  .btn-primary:disabled {
+    cursor: wait;
+    opacity: 0.7;
+  }
   
   /* Botões */
   .btn-primary {
