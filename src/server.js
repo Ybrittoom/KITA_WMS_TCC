@@ -6,11 +6,15 @@ import produtoRoutes from "./routes/produtoRoutes.js";
 const app = express();
 const port = Number(process.env.PORT) || 3000;
 const publicPath = fileURLToPath(new URL("./public/", import.meta.url));
+// ZXing e instalado pelo npm, mas esta aplicacao nao usa bundler no navegador.
+// Esta rota entrega o arquivo UMD oficial da dependencia como um script comum.
+const zxingBrowserPath = fileURLToPath(new URL("../node_modules/@zxing/browser/umd/", import.meta.url));
 const loginPath = fileURLToPath(new URL("./view/login.html", import.meta.url));
 const cadastroProdutoPath = fileURLToPath(new URL("./view/cadastroProduto.html", import.meta.url));
 
 app.use(express.json({ limit: "10kb" }));
 app.use("/public", express.static(publicPath));
+app.use("/vendor/zxing", express.static(zxingBrowserPath));
 app.use("/api/auth", authRoutes);
 app.use("/api/produtos", produtoRoutes);
 

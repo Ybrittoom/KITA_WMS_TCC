@@ -17,6 +17,24 @@ export async function listarProdutosPorEmpresa(empresaId) {
 }
 
 /**
+ * Procura um SKU exato somente entre os produtos da empresa autenticada.
+ * O filtro empresa_id e essencial: conhecer o SKU de outra empresa nao pode
+ * revelar se aquele produto existe nem retornar seus dados.
+ */
+export async function buscarProdutoPorSkuDaEmpresa(empresaId, sku) {
+  const resultado = await pool.query(
+    `SELECT id, sku, nome, preco, estoque_minimo
+     FROM public.produtos
+     WHERE empresa_id = $1 AND upper(sku) = $2 AND ativo = true
+     LIMIT 1`,
+    [empresaId, sku]
+  );
+
+  // Quando o SKU nao existe para esta empresa, o model sinaliza ausencia com null.
+  return resultado.rows[0] ?? null;
+}
+
+/**
  * Insere um produto usando o ID da empresa obtido do token validado.
  * empresa_id nao vem dos dados enviados pelo navegador.
  */

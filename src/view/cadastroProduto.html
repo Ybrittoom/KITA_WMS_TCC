@@ -29,13 +29,18 @@
           <h1 class="page-title">Produtos cadastrados</h1>
           <p class="product-count-text">Total de <strong id="total-count">0</strong> produtos na sua empresa.</p>
         </div>
-        <button type="button" class="btn-primary" id="btn-open-modal">
+        <div class="page-action-buttons">
+          <button type="button" class="btn-secondary" id="btn-open-scanner">
+            Ler codigo de barras
+          </button>
+          <button type="button" class="btn-primary" id="btn-open-modal">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <line x1="12" y1="5" x2="12" y2="19"></line>
             <line x1="5" y1="12" x2="19" y2="12"></line>
           </svg>
-          Cadastrar produto
-        </button>
+            Cadastrar produto
+          </button>
+        </div>
       </section>
 
       <p class="page-message" id="products-message" role="status" aria-live="polite"></p>
@@ -59,6 +64,45 @@
         </div>
       </section>
     </main>
+  </div>
+
+  <!-- Modal independente: a camera so e solicitada depois do clique do usuario. -->
+  <div class="modal-overlay" id="scanner-overlay" aria-hidden="true">
+    <section class="modal-card scanner-card" role="dialog" aria-modal="true" aria-labelledby="scanner-title">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title" id="scanner-title">Leitor de codigo de barras</h2>
+          <p class="modal-subtitle">Leia um codigo que contenha o SKU cadastrado do produto.</p>
+        </div>
+        <button type="button" class="btn-close" id="btn-close-scanner" aria-label="Fechar leitor">&times;</button>
+      </div>
+
+      <!-- O ZXing usa este video como pre-visualizacao e fonte dos quadros da camera. -->
+      <video id="scanner-video" class="scanner-video" muted playsinline></video>
+      <p class="scanner-status" id="scanner-status" role="status" aria-live="polite">Inicie a camera ou digite o SKU manualmente.</p>
+
+      <!-- Busca manual continua disponivel caso a camera nao exista ou seja negada. -->
+      <form class="scanner-manual" id="scanner-manual-form">
+        <div class="input-group">
+          <label for="scanner-sku">SKU lido ou digitado</label>
+          <input type="text" id="scanner-sku" maxlength="80" autocomplete="off" placeholder="Ex.: PROD-001">
+        </div>
+        <button type="submit" class="btn-primary" id="btn-search-sku">Buscar SKU</button>
+      </form>
+
+      <!-- Resultado usa textContent via JavaScript; dados do banco nao viram HTML. -->
+      <div class="scanner-result" id="scanner-result" hidden>
+        <strong id="scanner-product-name"></strong>
+        <span>SKU: <code id="scanner-product-sku"></code></span>
+        <span>Preco: <span id="scanner-product-price"></span></span>
+      </div>
+      <button type="button" class="btn-secondary scanner-create-button" id="btn-prefill-product" hidden>Usar SKU em novo cadastro</button>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" id="btn-start-camera">Iniciar camera</button>
+        <button type="button" class="btn-secondary" id="btn-stop-camera" disabled>Parar camera</button>
+      </div>
+    </section>
   </div>
 
   <div class="modal-overlay" id="modal-overlay" aria-hidden="true">
@@ -123,6 +167,8 @@
     </section>
   </div>
 
+  <!-- ZXing fornece o decodificador 1D/2D localmente, sem CDN no navegador. -->
+  <script src="/vendor/zxing/zxing-browser.min.js" defer></script>
   <script src="/public/js/cadastroProduto.js" defer></script>
 </body>
 </html>

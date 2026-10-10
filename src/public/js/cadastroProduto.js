@@ -14,8 +14,18 @@ document.addEventListener("DOMContentLoaded", () => {
   const pageMessage = document.getElementById("products-message");
   const formMessage = document.getElementById("form-message");
   const deleteMessage = document.getElementById("delete-message");
+  const scannerOverlay = document.getElementById("scanner-overlay");
+  const scannerVideo = document.getElementById("scanner-video");
+  const scannerStatus = document.getElementById("scanner-status");
+  const scannerInput = document.getElementById("scanner-sku");
+  const scannerResult = document.getElementById("scanner-result");
   const saveButton = document.getElementById("btn-save-product");
   const confirmDeleteButton = document.getElementById("btn-confirm-delete");
+  // O leitor e o controle devolvido pelo ZXing sao mantidos para encerrar a camera.
+  let barcodeReader = null;
+  let cameraControls = null;
+  let cameraStarting = false;
+  let codeAlreadyHandled = false;
   // Guarda o ID que esta sendo editado e o produto aguardando confirmacao.
   let editingProductId = null;
   let productPendingDeletion = null;
@@ -24,6 +34,144 @@ document.addEventListener("DOMContentLoaded", () => {
   const showPageMessage = (message, state = "error") => {
     pageMessage.textContent = message;
     pageMessage.dataset.state = state;
+  };
+
+  /** Exibe o modal do leitor e limpa o estado de uma leitura anterior. */
+  const openScanner = () => {
+    scannerOverlay.classList.add("active");
+    scannerOverlay.setAttribute("aria-hidden", "false");
+    scannerStatus.textContent = "Inicie a camera ou digite o SKU manualmente.";
+    scannerInput.value = "";
+    scannerResult.hidden = true;
+    document.getElementById("btn-prefill-product").hidden = true;
+    codeAlreadyHandled = false;
+    document.getElementById("btn-start-camera").focus();
+  };
+
+  /**
+   * Desliga a leitura e solta a camera do sistema operacional.
+   * Encerrar as tracks e importante: apenas esconder o modal deixaria a camera ligada.
+   */
+  const stopCamera = () => {
+    if (cameraControls) {
+      cameraControls.stop();
+      cameraControls = null;
+    }
+    // reset cobre o caso em que a leitura esta sendo iniciada e ainda nao retornou controls.
+    if (barcodeReader) barcodeReader.reset();
+    scannerVideo.pause();
+    scannerVideo.srcObject = null;
+    cameraStarting = false;
+    document.getElementById("btn-start-camera").disabled = false;
+    document.getElementById("btn-stop-camera").disabled = true;
+  };
+
+  /** Fecha o leitor; toda forma de fechamento passa primeiro pela limpeza da camera. */
+  const closeScanner = () => {
+    stopCamera();
+    scannerOverlay.classList.remove("active");
+    scannerOverlay.setAttribute("aria-hidden", "true");
+  };
+
+  /**
+   * Consulta a API usando o codigo lido ou digitado. O token autentica a empresa,
+   * e o servidor usa o ID desse token para limitar a busca ao tenant correto.
+   */
+  const searchProductBySku = async (rawSku) => {
+    const sku = String(rawSku || "").trim();
+    if (!sku) {
+      scannerStatus.textContent = "Digite ou leia um SKU para pesquisar.";
+      scannerInput.focus();
+      return;
+    }
+
+    scannerInput.value = sku;
+    scannerResult.hidden = true;
+    document.getElementById("btn-prefill-product").hidden = true;
+    scannerStatus.textContent = "Buscando produto nesta empresa...";
+    document.getElementById("btn-search-sku").disabled = true;
+
+    try {
+      const data = await request(`/api/produtos/buscar?sku=${encodeURIComponent(sku)}`);
+      const product = data.produto;
+      // textContent evita interpretar nome/SKU do banco como markup ou script.
+      document.getElementById("scanner-product-name").textContent = product.nome;
+      document.getElementById("scanner-product-sku").textContent = product.sku;
+      document.getElementById("scanner-product-price").textContent = formatPrice(product.preco);
+      scannerResult.hidden = false;
+      document.getElementById("btn-prefill-product").hidden = true;
+      scannerStatus.textContent = "Produto encontrado na sua empresa.";
+    } catch (error) {
+      // Uma leitura valida pode nao ter cadastro correspondente; oferecemos criar o item.
+      scannerStatus.textContent = error.message || "Nao foi possivel localizar esse SKU.";
+      scannerResult.hidden = true;
+      // O botao de cadastro so aparece quando a resposta significa SKU inexistente.
+      document.getElementById("btn-prefill-product").hidden = error.status !== 404;
+    } finally {
+      document.getElementById("btn-search-sku").disabled = false;
+    }
+  };
+
+  /**
+   * Pede acesso a uma camera e inicia a decodificacao ZXing no elemento de video.
+   * O navegador exige HTTPS em hospedagem; localhost e aceito para desenvolvimento.
+   */
+  const startCamera = async () => {
+    if (cameraStarting || cameraControls) return;
+    if (!window.ZXingBrowser?.BrowserMultiFormatReader) {
+      scannerStatus.textContent = "O leitor nao carregou. Digite o SKU manualmente.";
+      return;
+    }
+
+    cameraStarting = true;
+    codeAlreadyHandled = false;
+    document.getElementById("btn-start-camera").disabled = true;
+    scannerStatus.textContent = "Solicitando permissao para usar a camera...";
+
+    try {
+      barcodeReader = new window.ZXingBrowser.BrowserMultiFormatReader();
+      const controls = await barcodeReader.decodeFromVideoDevice(
+        undefined, // undefined deixa o navegador escolher a camera padrao.
+        scannerVideo,
+        (result) => {
+          // A leitura continua em varios quadros por segundo; processamos apenas o primeiro.
+          if (!result || codeAlreadyHandled) return;
+          codeAlreadyHandled = true;
+          const scannedCode = result.getText();
+          scannerInput.value = scannedCode;
+          scannerStatus.textContent = `Codigo lido: ${scannedCode}`;
+          stopCamera();
+          // A busca e disparada sem bloquear a callback do decodificador.
+          void searchProductBySku(scannedCode);
+        }
+      );
+
+      // Se a camera encontrou o codigo enquanto o metodo aguardava, ela ja deve estar parada.
+      if (codeAlreadyHandled) {
+        controls.stop();
+        return;
+      }
+
+      // Se a pessoa fechou o modal enquanto a permissao estava pendente, nao manter camera ativa.
+      if (scannerOverlay.getAttribute("aria-hidden") === "true") {
+        controls.stop();
+        return;
+      }
+      cameraControls = controls;
+      cameraStarting = false;
+      document.getElementById("btn-stop-camera").disabled = false;
+      scannerStatus.textContent = "Aponte a camera para o codigo de barras do produto.";
+    } catch (error) {
+      stopCamera();
+      if (error.name === "NotAllowedError" || error.name === "PermissionDeniedError") {
+        scannerStatus.textContent = "Permissao da camera negada. Voce ainda pode digitar o SKU.";
+      } else if (error.name === "NotFoundError" || error.name === "DevicesNotFoundError") {
+        scannerStatus.textContent = "Nenhuma camera foi encontrada. Digite o SKU manualmente.";
+      } else {
+        console.error("Falha ao iniciar leitor:", error);
+        scannerStatus.textContent = "Nao foi possivel iniciar a camera. Digite o SKU manualmente.";
+      }
+    }
   };
 
   /** Apaga a sessao local vencida e volta para a tela de login. */
@@ -51,7 +199,10 @@ document.addEventListener("DOMContentLoaded", () => {
       throw new Error("Sua sessão expirou. Entre novamente.");
     }
     if (!response.ok) {
-      throw new Error(data.erro || "Não foi possível concluir a operação.");
+      const error = new Error(data.erro || "Não foi possível concluir a operação.");
+      // O status permite a interface diferenciar SKU ausente de falha do servidor.
+      error.status = response.status;
+      throw error;
     }
     return data;
   };
@@ -196,6 +347,38 @@ document.addEventListener("DOMContentLoaded", () => {
   deleteOverlay.addEventListener("click", (event) => {
     if (event.target === deleteOverlay) closeDeleteConfirmation();
   });
+
+  // Eventos do leitor agrupados aqui deixam claro o caminho de abrir, usar e fechar.
+  document.getElementById("btn-open-scanner").addEventListener("click", openScanner);
+  document.getElementById("btn-close-scanner").addEventListener("click", closeScanner);
+  document.getElementById("btn-start-camera").addEventListener("click", startCamera);
+  document.getElementById("btn-stop-camera").addEventListener("click", () => {
+    stopCamera();
+    scannerStatus.textContent = "Camera parada. Voce pode digitar o SKU ou reiniciar a camera.";
+  });
+  document.getElementById("btn-search-sku").addEventListener("click", (event) => {
+    // O botao type=submit tambem envia o formulario; nao fazemos uma segunda busca aqui.
+    event.preventDefault();
+    void searchProductBySku(scannerInput.value);
+  });
+  document.getElementById("scanner-manual-form").addEventListener("submit", (event) => {
+    event.preventDefault();
+    void searchProductBySku(scannerInput.value);
+  });
+  scannerOverlay.addEventListener("click", (event) => {
+    // Clique no fundo equivale ao botao fechar; clique no cartao nao fecha o modal.
+    if (event.target === scannerOverlay) closeScanner();
+  });
+  document.getElementById("btn-prefill-product").addEventListener("click", () => {
+    const skuToPrefill = scannerInput.value.trim().toUpperCase();
+    closeScanner();
+    openModal();
+    document.getElementById("sku").value = skuToPrefill;
+    document.getElementById("nome").focus();
+  });
+
+  // Ao navegar para outra pagina, liberamos a camera mesmo sem fechar o modal manualmente.
+  window.addEventListener("pagehide", stopCamera);
 
   // O envio escolhe POST para novo produto e PUT para produto em edicao.
   form.addEventListener("submit", async (event) => {

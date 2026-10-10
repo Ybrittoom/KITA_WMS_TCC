@@ -1,5 +1,6 @@
 import {
   atualizarProdutoDaEmpresa,
+  buscarProdutoPorSkuDaEmpresa,
   inativarProdutoDaEmpresa,
   inserirProduto,
   listarProdutosPorEmpresa,
@@ -7,6 +8,32 @@ import {
 
 export async function buscarProdutosDaEmpresa(empresaId) {
   return listarProdutosPorEmpresa(empresaId);
+}
+
+/**
+ * Normaliza o texto lido pela camera ou digitado manualmente e procura o SKU.
+ * A validacao fica no service para que a regra funcione igualmente para
+ * qualquer tela ou cliente que futuramente chame esta API.
+ */
+export async function localizarProdutoPeloSku(codigoLido, empresaId) {
+  // Alguns leitores acrescentam espacos ou quebras de linha ao final da leitura.
+  const sku = typeof codigoLido === "string" ? codigoLido.trim().toUpperCase() : "";
+
+  if (!sku || sku.length > 80) {
+    const error = new Error("Informe um codigo com no maximo 80 caracteres.");
+    error.code = "PRODUCT_INVALID_SKU";
+    throw error;
+  }
+
+  // O empresaId vem do JWT validado no middleware, nunca do formulario.
+  const produto = await buscarProdutoPorSkuDaEmpresa(empresaId, sku);
+  if (!produto) {
+    const error = new Error("Nenhum produto ativo desta empresa possui esse SKU.");
+    error.code = "PRODUCT_NOT_FOUND";
+    throw error;
+  }
+
+  return produto;
 }
 
 /** Confere que o ID da URL e um bigint positivo aceito pelo PostgreSQL. */

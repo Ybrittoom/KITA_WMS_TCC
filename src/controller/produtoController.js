@@ -1,5 +1,6 @@
 import {
   buscarProdutosDaEmpresa,
+  localizarProdutoPeloSku,
   cadastrarProduto,
   editarProduto,
   excluirProduto,
@@ -12,6 +13,27 @@ export async function listarProdutos(req, res) {
   } catch (error) {
     console.error("Falha ao listar produtos:", error.message);
     return res.status(500).json({ erro: "Nao foi possivel carregar os produtos." });
+  }
+}
+
+/**
+ * Endpoint usado pelo leitor e pela busca manual para localizar um SKU.
+ * O controller converte o parametro HTTP em resposta; regras e consulta ficam
+ * nas camadas de service e model.
+ */
+export async function buscarProdutoPorSku(req, res) {
+  try {
+    const produto = await localizarProdutoPeloSku(req.query.sku, req.empresaAuth.id);
+    return res.status(200).json({ produto });
+  } catch (error) {
+    if (error.code === "PRODUCT_NOT_FOUND") {
+      return res.status(404).json({ erro: error.message });
+    }
+    if (error.code === "PRODUCT_INVALID_SKU") {
+      return res.status(400).json({ erro: error.message });
+    }
+    console.error("Falha ao localizar SKU:", error.message);
+    return res.status(500).json({ erro: "Nao foi possivel buscar o produto pelo SKU." });
   }
 }
 

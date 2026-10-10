@@ -69,10 +69,13 @@ As rotas estão organizadas em MVC + service:
 | `src/model/produtoModel.js` | Consulta, grava, atualiza e inativa em `public.produtos`, sempre no escopo da empresa autenticada. |
 | `src/view/cadastroProduto.html` | Tela acessada manualmente em `/produtos/cadastro`. |
 | `src/public/js/cadastroProduto.js` | Envia o JWT, carrega a lista e envia o formulário. |
+| `src/public/css/cadastroProduto.css` | Estilos da lista, formulários e janela do leitor. |
+| `src/server.js` | Entrega os arquivos públicos e o pacote ZXing instalado pelo npm. |
 
 Endpoints:
 
 - `GET /api/produtos`: lista os produtos da empresa autenticada.
+- `GET /api/produtos/buscar?sku=CODIGO`: procura SKU exato entre os produtos ativos da empresa autenticada.
 - `POST /api/produtos`: cadastra produto com `nome`, `sku`, `preco` e `estoque_minimo`.
 - `PUT /api/produtos/:id`: atualiza os campos do produto ativo daquela empresa.
 - `DELETE /api/produtos/:id`: inativa o produto, sem apagar o histórico.
@@ -86,6 +89,25 @@ SELECT id, empresa_id, sku, nome, preco, estoque_minimo
 FROM public.produtos
 ORDER BY id DESC;
 ```
+
+### Leitor de codigo de barras
+
+Na pagina de produtos, **Ler codigo de barras** abre uma janela separada. Clique em **Iniciar camera** e permita o acesso quando o navegador perguntar. A camera le o texto codificado e a pagina consulta `GET /api/produtos/buscar?sku=...`; o servidor usa o JWT para pesquisar somente na empresa logada. Se o codigo ainda nao estiver cadastrado, a tela permite preencher esse SKU no formulario de novo produto. Tambem e possivel digitar o SKU manualmente sem usar a camera.
+
+O leitor utiliza `@zxing/browser`, instalado como dependencia e servido localmente pelo Express em `/vendor/zxing`; assim, o navegador nao precisa baixar a biblioteca de um CDN. O codigo de barras precisa conter exatamente o SKU salvo no cadastro. Em desenvolvimento, use `http://localhost` (contexto seguro reconhecido pelo navegador); fora de localhost, o acesso a camera exige HTTPS. A camera e iniciada somente apos o clique e e desligada ao fechar a janela ou sair da pagina.
+
+#### O que cada camada faz no leitor
+
+- `produtoRoutes.js`: disponibiliza `GET /buscar` sob o middleware JWT.
+- `produtoController.js`: le `sku` da query e converte sucesso/erro em respostas HTTP.
+- `produtoService.js`: remove espacos, padroniza maiusculas, valida tamanho e trata SKU nao encontrado.
+- `produtoModel.js`: executa consulta parametrizada limitada por `empresa_id` e `ativo = true`.
+- `cadastroProduto.html`: declara janela, video da camera, busca manual e resultado.
+- `cadastroProduto.js`: inicia/para a camera, busca SKU com JWT e apresenta o produto com seguranca.
+- `cadastroProduto.css`: cuida da apresentacao responsiva dos elementos do leitor.
+- `server.js`: serve o arquivo UMD da dependencia sem uma etapa de build do frontend.
+
+Essa funcionalidade nao exige alteracao no banco de dados. Ela reutiliza `produtos.sku` e somente consulta o produto; nao movimenta nem altera estoque.
 
 ## Publicar depois no Supabase e Render
 
