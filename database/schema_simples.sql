@@ -59,6 +59,7 @@ CREATE TABLE public.produtos (
   nome text NOT NULL,
   preco numeric(12,2) NOT NULL DEFAULT 0 CHECK (preco >= 0),
   estoque_minimo integer NOT NULL DEFAULT 0 CHECK (estoque_minimo >= 0),
+  ativo boolean NOT NULL DEFAULT true,
   UNIQUE (id, empresa_id),
   UNIQUE (empresa_id, sku)
 );

@@ -49,10 +49,11 @@
                 <th>SKU</th>
                 <th>Preço</th>
                 <th>Estoque mínimo</th>
+                <th>Ações</th>
               </tr>
             </thead>
             <tbody id="products-tbody">
-              <tr><td colspan="4">Carregando produtos...</td></tr>
+              <tr><td colspan="5">Carregando produtos...</td></tr>
             </tbody>
           </table>
         </div>
@@ -98,6 +99,27 @@
           <button type="submit" class="btn-primary" id="btn-save-product">Salvar produto</button>
         </div>
       </form>
+    </section>
+  </div>
+
+  <div class="modal-overlay" id="delete-overlay" aria-hidden="true">
+    <section class="modal-card" role="alertdialog" aria-modal="true" aria-labelledby="delete-title">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title" id="delete-title">Inativar produto?</h2>
+          <p class="modal-subtitle">Confirme antes de continuar.</p>
+        </div>
+        <button type="button" class="btn-close" id="btn-close-delete" aria-label="Fechar">&times;</button>
+      </div>
+      <p class="delete-warning">
+        O produto <strong id="delete-product-name"></strong> deixará de aparecer na lista ativa.
+        O histórico será preservado e o SKU continuará reservado para esta empresa.
+      </p>
+      <p class="form-message" id="delete-message" role="alert" aria-live="assertive"></p>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" id="btn-cancel-delete">Manter produto</button>
+        <button type="button" class="btn-danger" id="btn-confirm-delete">Inativar produto</button>
+      </div>
     </section>
   </div>
 

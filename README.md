@@ -65,8 +65,8 @@ As rotas estão organizadas em MVC + service:
 | --- | --- |
 | `src/routes/produtoRoutes.js` | Define as rotas protegidas de produtos. |
 | `src/controller/produtoController.js` | Trata requisições e respostas HTTP. |
-| `src/service/produtoService.js` | Valida nome, SKU, preço e estoque mínimo; trata SKU duplicado. |
-| `src/model/produtoModel.js` | Consulta e grava em `public.produtos`, sempre no escopo da empresa autenticada. |
+| `src/service/produtoService.js` | Valida nome, SKU, preço e estoque mínimo; trata SKU duplicado e inativação. |
+| `src/model/produtoModel.js` | Consulta, grava, atualiza e inativa em `public.produtos`, sempre no escopo da empresa autenticada. |
 | `src/view/cadastroProduto.html` | Tela acessada manualmente em `/produtos/cadastro`. |
 | `src/public/js/cadastroProduto.js` | Envia o JWT, carrega a lista e envia o formulário. |
 
@@ -74,8 +74,10 @@ Endpoints:
 
 - `GET /api/produtos`: lista os produtos da empresa autenticada.
 - `POST /api/produtos`: cadastra produto com `nome`, `sku`, `preco` e `estoque_minimo`.
+- `PUT /api/produtos/:id`: atualiza os campos do produto ativo daquela empresa.
+- `DELETE /api/produtos/:id`: inativa o produto, sem apagar o histórico.
 
-As duas rotas exigem JWT. O SKU é convertido para maiúsculas e deve ser único dentro da empresa. A tela lista preço e estoque mínimo; o saldo atual depende de futuras movimentações de estoque.
+Todas as rotas exigem JWT. O SKU é convertido para maiúsculas e deve ser único dentro da empresa. Ao excluir, o produto recebe `ativo = false`; ele some da lista ativa, mas suas referências históricas são preservadas e o SKU continua reservado. A tela lista preço e estoque mínimo; o saldo atual depende de futuras movimentações de estoque.
 
 Para conferir os produtos no DBeaver:
 
@@ -95,6 +97,6 @@ ORDER BY id DESC;
 
 ## Limitações atuais
 
-O sistema tem login, a rota `/api/auth/me` e cadastro/listagem de produtos. Ainda não implementa cadastro de empresa pelo site, recuperação de senha, logout, renovação do JWT, edição/exclusão de produtos, saldo de estoque ou endpoints de clientes e pedidos. Cada empresa compartilha uma conta de login; contas individuais de funcionários exigiriam uma evolução futura.
+O sistema tem login, a rota `/api/auth/me` e cadastro/listagem/edição/inativação de produtos. Ainda não implementa cadastro de empresa pelo site, recuperação de senha, logout, renovação do JWT, reativação de produtos, saldo de estoque ou endpoints de clientes e pedidos. Cada empresa compartilha uma conta de login; contas individuais de funcionários exigiriam uma evolução futura.
 
 `npm test` ainda é apenas um placeholder, sem suíte automatizada.
