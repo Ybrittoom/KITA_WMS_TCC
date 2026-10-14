@@ -25,6 +25,8 @@ document.addEventListener("DOMContentLoaded", () => {
   let barcodeReader = null;
   let cameraControls = null;
   let cameraStarting = false;
+  // Cada tentativa recebe um numero para invalidar inicializacoes antigas ao parar/reabrir.
+  let cameraGeneration = 0;
   let codeAlreadyHandled = false;
   // Guarda o ID que esta sendo editado e o produto aguardando confirmacao.
   let editingProductId = null;
@@ -53,14 +55,23 @@ document.addEventListener("DOMContentLoaded", () => {
    * Encerrar as tracks e importante: apenas esconder o modal deixaria a camera ligada.
    */
   const stopCamera = () => {
+    // Invalida qualquer pedido de camera que ainda esteja aguardando permissao do navegador.
+    cameraGeneration += 1;
+
     if (cameraControls) {
       cameraControls.stop();
       cameraControls = null;
     }
-    // reset cobre o caso em que a leitura esta sendo iniciada e ainda nao retornou controls.
-    if (barcodeReader) barcodeReader.reset();
+
+    // Libera diretamente as faixas de video, inclusive se o ZXing ainda nao devolveu controls.
+    const stream = scannerVideo.srcObject;
+    if (stream) {
+      stream.getTracks().forEach((track) => track.stop());
+    }
+
     scannerVideo.pause();
     scannerVideo.srcObject = null;
+    barcodeReader = null;
     cameraStarting = false;
     document.getElementById("btn-start-camera").disabled = false;
     document.getElementById("btn-stop-camera").disabled = true;
@@ -124,6 +135,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     cameraStarting = true;
+    const thisCameraGeneration = ++cameraGeneration;
     codeAlreadyHandled = false;
     document.getElementById("btn-start-camera").disabled = true;
     scannerStatus.textContent = "Solicitando permissao para usar a camera...";
@@ -134,6 +146,8 @@ document.addEventListener("DOMContentLoaded", () => {
         undefined, // undefined deixa o navegador escolher a camera padrao.
         scannerVideo,
         (result) => {
+          // Callback de uma tentativa antiga nao pode agir sobre uma camera nova.
+          if (thisCameraGeneration !== cameraGeneration) return;
           // A leitura continua em varios quadros por segundo; processamos apenas o primeiro.
           if (!result || codeAlreadyHandled) return;
           codeAlreadyHandled = true;
@@ -145,6 +159,12 @@ document.addEventListener("DOMContentLoaded", () => {
           void searchProductBySku(scannedCode);
         }
       );
+
+      // O usuario pode ter parado/fechado e iniciado outra tentativa enquanto havia permissao pendente.
+      if (thisCameraGeneration !== cameraGeneration) {
+        controls.stop();
+        return;
+      }
 
       // Se a camera encontrou o codigo enquanto o metodo aguardava, ela ja deve estar parada.
       if (codeAlreadyHandled) {
@@ -162,6 +182,8 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("btn-stop-camera").disabled = false;
       scannerStatus.textContent = "Aponte a camera para o codigo de barras do produto.";
     } catch (error) {
+      // Um erro de uma tentativa cancelada nao deve parar a tentativa mais recente.
+      if (thisCameraGeneration !== cameraGeneration) return;
       stopCamera();
       if (error.name === "NotAllowedError" || error.name === "PermissionDeniedError") {
         scannerStatus.textContent = "Permissao da camera negada. Voce ainda pode digitar o SKU.";
