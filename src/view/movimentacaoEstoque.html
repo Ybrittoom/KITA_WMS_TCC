@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Estoque - KITA WMS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/public/css/movimentacaoEstoque.css">
+</head>
+<body>
+  <div class="app-layout">
+    <header class="app-header">
+      <span class="brand-badge">KITA WMS</span>
+      <div>
+        <span class="company-label">Empresa logada</span>
+        <h2 id="company-name">Carregando...</h2>
+      </div>
+      <a href="/produtos/cadastro">Produtos</a>
+    </header>
+
+    <main>
+      <section class="intro">
+        <h1>Movimentação de estoque</h1>
+        <p>Registre entradas e saídas e acompanhe o saldo de cada produto por local.</p>
+      </section>
+      <p id="page-message" class="message" role="status" aria-live="polite"></p>
+
+      <section class="card location-card">
+        <div>
+          <h2>Local de estoque</h2>
+          <p>Os locais são separados por empresa.</p>
+        </div>
+        <label class="field location-select">Local selecionado
+          <select id="location-select" disabled><option value="">Carregando locais...</option></select>
+        </label>
+        <form id="location-form" class="location-form">
+          <label class="field">Novo local<input id="location-name" name="nome" maxlength="120" required placeholder="Ex.: Estoque principal"></label>
+          <label class="field">Localização (opcional)<input id="location-address" name="localizacao" maxlength="160" placeholder="Ex.: Rua A, prateleira 2"></label>
+          <button class="button secondary" type="submit" id="create-location-button">Criar local</button>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2>Registrar movimentação</h2>
+        <p>Uma entrada aumenta o saldo. Uma saída só é aceita se houver quantidade disponível.</p>
+        <form id="movement-form" class="movement-form">
+          <label class="field">Produto<select id="product-select" required><option value="">Carregando produtos...</option></select></label>
+          <label class="field">Operação<select id="movement-type" required><option value="entrada">Entrada</option><option value="saida">Saída</option></select></label>
+          <label class="field">Quantidade<input id="movement-quantity" type="number" min="1" step="1" required></label>
+          <button class="button primary" type="submit" id="movement-button">Registrar</button>
+        </form>
+        <p id="movement-message" class="message" role="status" aria-live="polite"></p>
+      </section>
+
+      <section class="card">
+        <div class="section-heading"><div><h2>Saldo atual</h2><p>Produtos sem movimentação começam com saldo zero.</p></div></div>
+        <div class="table-scroll"><table>
+          <thead><tr><th>Produto</th><th>SKU</th><th>Saldo</th><th>Estoque mínimo</th><th>Situação</th></tr></thead>
+          <tbody id="balance-body"><tr><td colspan="5">Selecione um local.</td></tr></tbody>
+        </table></div>
+      </section>
+
+      <section class="card">
+        <div class="section-heading"><div><h2>Histórico recente</h2><p>Exibindo até as 100 movimentações mais recentes deste local.</p></div></div>
+        <div class="table-scroll"><table>
+          <thead><tr><th>Data</th><th>Produto</th><th>Operação</th><th>Quantidade</th><th>Saldo após operação</th></tr></thead>
+          <tbody id="history-body"><tr><td colspan="5">Selecione um local.</td></tr></tbody>
+        </table></div>
+      </section>
+    </main>
+  </div>
+  <script src="/public/js/movimentacaoEstoque.js" defer></script>
+</body>
+</html>

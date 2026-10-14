@@ -87,6 +87,35 @@ FROM public.produtos
 ORDER BY id DESC;
 ```
 
+### Movimentação de estoque
+
+Na branch `feature/movimentacao-estoque`, a tela `/estoque/movimentacoes` permite criar locais de estoque, registrar entradas e saídas, conferir o saldo por local e consultar as 100 operações mais recentes. O login não redireciona para essa página: depois de entrar, acesse a URL diretamente no mesmo navegador, como ocorre na tela de produtos.
+
+As operações são limitadas à empresa presente no JWT. Uma saída que excede o saldo é recusada. O saldo inicial de cada produto em cada local é zero; portanto, registre uma entrada para dar início ao saldo. O estoque mínimo serve para alertar na tela quando o saldo o atinge. Nesta primeira versão, ajuste manual, exclusão/estorno de movimentos e movimentação automática por nota fiscal não estão disponíveis.
+
+Arquivos adicionados/alterados:
+
+| Arquivo | Responsabilidade |
+| --- | --- |
+| `src/routes/estoqueRoutes.js` | Declara as rotas de locais, saldos e movimentações e exige JWT. |
+| `src/controller/estoqueController.js` | Converte chamadas HTTP em respostas e códigos de erro. |
+| `src/service/estoqueService.js` | Valida IDs, quantidades, tipo e regra de saldo suficiente. |
+| `src/model/estoqueModel.js` | Consulta e grava em `public.estoques` e `public.estoque_produto`; registra movimentos em transação. |
+| `src/view/movimentacaoEstoque.html` | Formulários e tabelas da página acessada em `/estoque/movimentacoes`. |
+| `src/public/js/movimentacaoEstoque.js` | Envia o JWT, busca os dados, registra ações e atualiza as tabelas. |
+| `src/public/css/movimentacaoEstoque.css` | Estilos responsivos da página. |
+| `src/server.js` | Monta `/api/estoque` e serve a página. |
+
+Endpoints protegidos:
+
+- `GET /api/estoque/locais`: lista os locais da empresa autenticada.
+- `POST /api/estoque/locais`: cria um local com `nome` e `localizacao` opcional.
+- `GET /api/estoque/saldos?estoque_id=ID`: retorna saldo atual e estoque mínimo dos produtos ativos.
+- `GET /api/estoque/movimentacoes?estoque_id=ID`: retorna o histórico recente do local.
+- `POST /api/estoque/movimentacoes`: recebe `estoque_id`, `produto_id`, `tipo` (`entrada` ou `saida`) e `quantidade` inteira positiva.
+
+O esquema já contém as tabelas e colunas necessárias. Não é preciso executar alteração SQL para esta versão. O banco mantém uma linha por movimento e grava `saldo_atual` como o saldo depois daquela operação.
+
 ## Publicar depois no Supabase e Render
 
 1. Crie um projeto Supabase novo para não misturar o banco local ou tabelas antigas.
@@ -97,6 +126,6 @@ ORDER BY id DESC;
 
 ## Limitações atuais
 
-O sistema tem login, a rota `/api/auth/me` e cadastro/listagem/edição/inativação de produtos. Ainda não implementa cadastro de empresa pelo site, recuperação de senha, logout, renovação do JWT, reativação de produtos, saldo de estoque ou endpoints de clientes e pedidos. Cada empresa compartilha uma conta de login; contas individuais de funcionários exigiriam uma evolução futura.
+O sistema tem login, a rota `/api/auth/me`, cadastro/listagem/edição/inativação de produtos e movimentação básica de estoque. Ainda não implementa cadastro de empresa pelo site, recuperação de senha, logout, renovação do JWT, reativação de produtos, estorno/ajuste de movimentos ou endpoints de clientes e pedidos. Cada empresa compartilha uma conta de login; contas individuais de funcionários exigiriam uma evolução futura.
 
 `npm test` ainda é apenas um placeholder, sem suíte automatizada.
