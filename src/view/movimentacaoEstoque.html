@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/public/css/movimentacaoEstoque.css">
+  <link rel="stylesheet" href="/public/css/barcodeScanner.css">
 </head>
 <body>
   <div class="app-layout">
@@ -43,7 +44,10 @@
       </section>
 
       <section class="card">
-        <h2>Registrar movimentação</h2>
+        <div class="movement-heading">
+          <h2>Registrar movimentação</h2>
+          <button class="button secondary" type="button" id="open-stock-scanner">Ler código de barras</button>
+        </div>
         <p>Uma entrada aumenta o saldo. Uma saída só é aceita se houver quantidade disponível.</p>
         <form id="movement-form" class="movement-form">
           <label class="field">Produto<select id="product-select" required><option value="">Carregando produtos...</option></select></label>
@@ -71,6 +75,39 @@
       </section>
     </main>
   </div>
+  <!-- Leitor de produto: a leitura seleciona o item, mas nao envia a movimentacao. -->
+  <div class="scanner-overlay" id="stock-scanner-overlay" aria-hidden="true">
+    <section class="scanner-card" role="dialog" aria-modal="true" aria-labelledby="stock-scanner-title">
+      <div class="scanner-heading">
+        <div>
+          <h2 id="stock-scanner-title">Leitor de código de barras</h2>
+          <p>Escaneie o código que corresponde ao SKU do produto.</p>
+        </div>
+        <button class="scanner-close" type="button" id="close-stock-scanner" aria-label="Fechar leitor">&times;</button>
+      </div>
+      <video id="stock-scanner-video" muted playsinline></video>
+      <p class="scanner-status" id="stock-scanner-status" role="status" aria-live="polite">Inicie a câmera ou digite o SKU.</p>
+      <form class="scanner-manual-form" id="stock-scanner-form">
+        <label class="field">SKU lido ou digitado
+          <input id="stock-scanner-sku" type="text" maxlength="80" autocomplete="off" placeholder="Ex.: PROD-001">
+        </label>
+        <button class="button primary" id="search-stock-sku" type="submit">Buscar SKU</button>
+      </form>
+      <div class="scanner-product" id="stock-scanner-product" hidden>
+        <strong id="stock-scanner-product-name"></strong>
+        <span>SKU: <code id="stock-scanner-product-sku"></code></span>
+        <span>Preço: <span id="stock-scanner-product-price"></span></span>
+      </div>
+      <button class="button primary use-scanned-product" id="use-scanned-product" type="button" hidden>Usar produto na movimentação</button>
+      <a class="scanner-catalog-link" id="stock-scanner-catalog-link" href="/produtos/cadastro" hidden>Abrir cadastro de produtos</a>
+      <div class="scanner-footer">
+        <button class="button secondary" type="button" id="start-stock-camera">Iniciar câmera</button>
+        <button class="button secondary" type="button" id="stop-stock-camera" disabled>Parar câmera</button>
+      </div>
+    </section>
+  </div>
+  <!-- O Express serve a biblioteca localmente, sem dependência de CDN. -->
+  <script src="/vendor/zxing/zxing-browser.min.js" defer></script>
   <script src="/public/js/movimentacaoEstoque.js" defer></script>
 </body>
 </html>

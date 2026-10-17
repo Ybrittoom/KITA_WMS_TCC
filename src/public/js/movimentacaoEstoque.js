@@ -14,7 +14,19 @@ document.addEventListener("DOMContentLoaded", () => {
   const movementMessage = document.getElementById("movement-message");
   const balanceBody = document.getElementById("balance-body");
   const historyBody = document.getElementById("history-body");
+  const scannerOverlay = document.getElementById("stock-scanner-overlay");
+  const scannerVideo = document.getElementById("stock-scanner-video");
+  const scannerStatus = document.getElementById("stock-scanner-status");
+  const scannerInput = document.getElementById("stock-scanner-sku");
+  const scannerProduct = document.getElementById("stock-scanner-product");
+  const useScannedProductButton = document.getElementById("use-scanned-product");
   let products = [];
+  let barcodeReader = null;
+  let cameraControls = null;
+  let cameraStarting = false;
+  let cameraGeneration = 0;
+  let codeAlreadyHandled = false;
+  let scannedProduct = null;
 
   /** Apaga os dados locais da sessão inválida e volta ao login. */
   function encerrarSessao() {
@@ -36,7 +48,11 @@ document.addEventListener("DOMContentLoaded", () => {
       encerrarSessao();
       throw new Error("Sua sessão expirou. Entre novamente.");
     }
-    if (!response.ok) throw new Error(data.erro || "Não foi possível concluir a operação.");
+    if (!response.ok) {
+      const error = new Error(data.erro || "Não foi possível concluir a operação.");
+      error.status = response.status;
+      throw error;
+    }
     return data;
   }
 
@@ -70,6 +86,129 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     productSelect.disabled = products.length === 0;
     if (products.length === 0) productSelect.replaceChildren(new Option("Cadastre um produto primeiro", ""));
+  }
+
+  /** Abre o leitor e remove o resultado da leitura anterior. */
+  function abrirLeitor() {
+    scannerOverlay.classList.add("active");
+    scannerOverlay.setAttribute("aria-hidden", "false");
+    scannerStatus.textContent = "Inicie a câmera ou digite o SKU.";
+    scannerInput.value = "";
+    scannerProduct.hidden = true;
+    useScannedProductButton.hidden = true;
+    document.getElementById("stock-scanner-catalog-link").hidden = true;
+    scannedProduct = null;
+    codeAlreadyHandled = false;
+    document.getElementById("start-stock-camera").focus();
+  }
+
+  /** Para o leitor e libera as faixas de vídeo da câmera do dispositivo. */
+  function pararCameraEstoque() {
+    // O número de geração invalida permissões/callbacks de inicializações antigas.
+    cameraGeneration += 1;
+    if (cameraControls) {
+      try { cameraControls.stop(); } catch { /* A câmera pode já ter sido desligada pelo navegador. */ }
+      cameraControls = null;
+    }
+    const stream = scannerVideo.srcObject;
+    if (stream) stream.getTracks().forEach((track) => track.stop());
+    scannerVideo.pause();
+    scannerVideo.srcObject = null;
+    barcodeReader = null;
+    cameraStarting = false;
+    document.getElementById("start-stock-camera").disabled = false;
+    document.getElementById("stop-stock-camera").disabled = true;
+  }
+
+  /** Fecha a janela sempre desligando a câmera antes de escondê-la. */
+  function fecharLeitor() {
+    pararCameraEstoque();
+    scannerOverlay.classList.remove("active");
+    scannerOverlay.setAttribute("aria-hidden", "true");
+  }
+
+  /** Procura o SKU no cadastro da empresa; somente produtos ativos podem ser movimentados. */
+  async function buscarSkuLido(codigo) {
+    const sku = String(codigo || "").trim();
+    if (!sku) {
+      scannerStatus.textContent = "Digite ou leia um SKU para pesquisar.";
+      scannerInput.focus();
+      return;
+    }
+    scannerInput.value = sku;
+    scannerProduct.hidden = true;
+    useScannedProductButton.hidden = true;
+    document.getElementById("stock-scanner-catalog-link").hidden = true;
+    scannedProduct = null;
+    scannerStatus.textContent = "Buscando produto nesta empresa...";
+    const searchButton = document.getElementById("search-stock-sku");
+    searchButton.disabled = true;
+
+    try {
+      const data = await requisicao(`/api/produtos/buscar?sku=${encodeURIComponent(sku)}`);
+      scannedProduct = data.produto;
+      document.getElementById("stock-scanner-product-name").textContent = scannedProduct.nome;
+      document.getElementById("stock-scanner-product-sku").textContent = scannedProduct.sku;
+      document.getElementById("stock-scanner-product-price").textContent = new Intl.NumberFormat("pt-BR", {
+        style: "currency", currency: "BRL",
+      }).format(Number(scannedProduct.preco));
+      scannerProduct.hidden = false;
+      useScannedProductButton.hidden = false;
+      scannerStatus.textContent = "Produto encontrado. Confirme para selecioná-lo na movimentação.";
+    } catch (error) {
+      scannerStatus.textContent = error.message || "Não foi possível localizar este SKU.";
+      // Se o SKU não existe, apontamos para o cadastro sem tentar movimentar um produto inválido.
+      document.getElementById("stock-scanner-catalog-link").hidden = error.status !== 404;
+    } finally {
+      searchButton.disabled = false;
+    }
+  }
+
+  /** Pede acesso à câmera e lê somente um código por abertura do leitor. */
+  async function iniciarCameraEstoque() {
+    if (cameraStarting || cameraControls) return;
+    if (!window.ZXingBrowser?.BrowserMultiFormatReader) {
+      scannerStatus.textContent = "O leitor não carregou. Digite o SKU manualmente.";
+      return;
+    }
+    cameraStarting = true;
+    const tentativa = ++cameraGeneration;
+    codeAlreadyHandled = false;
+    document.getElementById("start-stock-camera").disabled = true;
+    scannerStatus.textContent = "Solicitando permissão para usar a câmera...";
+
+    try {
+      barcodeReader = new window.ZXingBrowser.BrowserMultiFormatReader();
+      const controls = await barcodeReader.decodeFromVideoDevice(undefined, scannerVideo, (result) => {
+        if (tentativa !== cameraGeneration || !result || codeAlreadyHandled) return;
+        codeAlreadyHandled = true;
+        const codigo = result.getText();
+        scannerStatus.textContent = `Código lido: ${codigo}`;
+        pararCameraEstoque();
+        void buscarSkuLido(codigo);
+      });
+
+      // Não mantém a câmera se o leitor foi fechado ou cancelado enquanto o navegador pedia permissão.
+      if (tentativa !== cameraGeneration || scannerOverlay.getAttribute("aria-hidden") === "true" || codeAlreadyHandled) {
+        controls.stop();
+        return;
+      }
+      cameraControls = controls;
+      cameraStarting = false;
+      document.getElementById("stop-stock-camera").disabled = false;
+      scannerStatus.textContent = "Aponte a câmera para o código de barras do produto.";
+    } catch (error) {
+      if (tentativa !== cameraGeneration) return;
+      pararCameraEstoque();
+      if (["NotAllowedError", "PermissionDeniedError"].includes(error.name)) {
+        scannerStatus.textContent = "Permissão da câmera negada. Você ainda pode digitar o SKU.";
+      } else if (["NotFoundError", "DevicesNotFoundError"].includes(error.name)) {
+        scannerStatus.textContent = "Nenhuma câmera foi encontrada. Digite o SKU manualmente.";
+      } else {
+        console.error("Falha ao iniciar o leitor de estoque:", error);
+        scannerStatus.textContent = "Não foi possível iniciar a câmera. Digite o SKU manualmente.";
+      }
+    }
   }
 
   /** Busca e mostra os locais desta empresa, preservando a seleção atual. */
@@ -157,6 +296,39 @@ document.addEventListener("DOMContentLoaded", () => {
     renderizarSaldos(saldos.saldos || []);
     renderizarHistorico(historico.movimentacoes || []);
   }
+
+  // A mesma busca serve para câmera e digitação manual.
+  document.getElementById("open-stock-scanner").addEventListener("click", abrirLeitor);
+  document.getElementById("close-stock-scanner").addEventListener("click", fecharLeitor);
+  document.getElementById("start-stock-camera").addEventListener("click", iniciarCameraEstoque);
+  document.getElementById("stop-stock-camera").addEventListener("click", () => {
+    pararCameraEstoque();
+    scannerStatus.textContent = "Câmera parada. Digite o SKU ou inicie a câmera novamente.";
+  });
+  document.getElementById("stock-scanner-form").addEventListener("submit", (event) => {
+    event.preventDefault();
+    void buscarSkuLido(scannerInput.value);
+  });
+  scannerOverlay.addEventListener("click", (event) => {
+    if (event.target === scannerOverlay) fecharLeitor();
+  });
+
+  // Após confirmar, o produto escaneado é escolhido; a entrada/saída ainda requer confirmação explícita.
+  useScannedProductButton.addEventListener("click", () => {
+    if (!scannedProduct) return;
+    const productId = String(scannedProduct.id);
+    const optionExists = [...productSelect.options].some((option) => option.value === productId);
+    if (!optionExists) {
+      productSelect.add(new Option(`${scannedProduct.nome} (SKU: ${scannedProduct.sku})`, productId));
+    }
+    productSelect.value = productId;
+    fecharLeitor();
+    document.getElementById("movement-type").focus();
+    mostrarMensagem(movementMessage, `${scannedProduct.nome} selecionado. Escolha a operação e a quantidade.`, "success");
+  });
+
+  document.getElementById("stock-scanner-catalog-link").addEventListener("click", fecharLeitor);
+  window.addEventListener("pagehide", pararCameraEstoque);
 
   // Criar um local sempre envia só nome/localização; o servidor deriva a empresa do JWT.
   locationForm.addEventListener("submit", async (event) => {
