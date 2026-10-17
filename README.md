@@ -69,13 +69,10 @@ As rotas estão organizadas em MVC + service:
 | `src/model/produtoModel.js` | Consulta, grava, atualiza e inativa em `public.produtos`, sempre no escopo da empresa autenticada. |
 | `src/view/cadastroProduto.html` | Tela acessada manualmente em `/produtos/cadastro`. |
 | `src/public/js/cadastroProduto.js` | Envia o JWT, carrega a lista e envia o formulário. |
-| `src/public/css/cadastroProduto.css` | Estilos da lista, formulários e janela do leitor. |
-| `src/server.js` | Entrega os arquivos públicos e o pacote ZXing instalado pelo npm. |
 
 Endpoints:
 
 - `GET /api/produtos`: lista os produtos da empresa autenticada.
-- `GET /api/produtos/buscar?sku=CODIGO`: procura SKU exato entre os produtos ativos da empresa autenticada.
 - `POST /api/produtos`: cadastra produto com `nome`, `sku`, `preco` e `estoque_minimo`.
 - `PUT /api/produtos/:id`: atualiza os campos do produto ativo daquela empresa.
 - `DELETE /api/produtos/:id`: inativa o produto, sem apagar o histórico.
@@ -90,24 +87,41 @@ FROM public.produtos
 ORDER BY id DESC;
 ```
 
+### Movimentação de estoque
+
+Na tela `/estoque/movimentacoes`, a empresa autenticada pode criar locais de estoque, registrar entradas e saídas, conferir o saldo por local e consultar as 100 operações mais recentes. O login não redireciona para essa página: depois de entrar, acesse a URL diretamente no mesmo navegador, como ocorre na tela de produtos.
+
+As operações são limitadas à empresa presente no JWT. Uma saída que excede o saldo é recusada. O saldo inicial de cada produto em cada local é zero; portanto, registre uma entrada para dar início ao saldo. O estoque mínimo serve para alertar na tela quando o saldo o atinge. Nesta primeira versão, ajuste manual, exclusão/estorno de movimentos e movimentação automática por nota fiscal não estão disponíveis.
+
+Arquivos adicionados/alterados:
+
+| Arquivo | Responsabilidade |
+| --- | --- |
+| `src/routes/estoqueRoutes.js` | Declara as rotas de locais, saldos e movimentações e exige JWT. |
+| `src/controller/estoqueController.js` | Converte chamadas HTTP em respostas e códigos de erro. |
+| `src/service/estoqueService.js` | Valida IDs, quantidades, tipo e regra de saldo suficiente. |
+| `src/model/estoqueModel.js` | Consulta e grava em `public.estoques` e `public.estoque_produto`; registra movimentos em transação. |
+| `src/view/movimentacaoEstoque.html` | Formulários e tabelas da página acessada em `/estoque/movimentacoes`. |
+| `src/public/js/movimentacaoEstoque.js` | Envia o JWT, busca os dados, registra ações e atualiza as tabelas. |
+| `src/public/css/movimentacaoEstoque.css` | Estilos responsivos da página. |
+| `src/public/css/barcodeScanner.css` | Estilos do leitor de código usado na movimentação de estoque. |
+| `src/server.js` | Monta `/api/estoque` e serve a página. |
+
+Endpoints protegidos:
+
+- `GET /api/estoque/locais`: lista os locais da empresa autenticada.
+- `POST /api/estoque/locais`: cria um local com `nome` e `localizacao` opcional.
+- `GET /api/estoque/saldos?estoque_id=ID`: retorna saldo atual e estoque mínimo dos produtos ativos.
+- `GET /api/estoque/movimentacoes?estoque_id=ID`: retorna o histórico recente do local.
+- `POST /api/estoque/movimentacoes`: recebe `estoque_id`, `produto_id`, `tipo` (`entrada` ou `saida`) e `quantidade` inteira positiva.
+
+O esquema já contém as tabelas e colunas necessárias. Não é preciso executar alteração SQL para esta versão. O banco mantém uma linha por movimento e grava `saldo_atual` como o saldo depois daquela operação.
+
 ### Leitor de codigo de barras
 
-Na pagina de produtos, **Ler codigo de barras** abre uma janela separada. Clique em **Iniciar camera** e permita o acesso quando o navegador perguntar. A camera le o texto codificado e a pagina consulta `GET /api/produtos/buscar?sku=...`; o servidor usa o JWT para pesquisar somente na empresa logada. Se o codigo ainda nao estiver cadastrado, a tela permite preencher esse SKU no formulario de novo produto. Tambem e possivel digitar o SKU manualmente sem usar a camera.
+Na tela de produtos, **Ler codigo de barras** abre o leitor, procura o SKU na empresa autenticada e pode preencher o SKU no formulario de cadastro. Na tela `/estoque/movimentacoes`, o botao **Ler codigo de barras** abre o mesmo leitor; ao encontrar o produto, ele fica selecionado no formulario. A leitura apenas identifica o produto: o usuario ainda escolhe entrada ou saida e informa a quantidade antes de registrar a movimentacao.
 
-O leitor utiliza `@zxing/browser`, instalado como dependencia e servido localmente pelo Express em `/vendor/zxing`; assim, o navegador nao precisa baixar a biblioteca de um CDN. O codigo de barras precisa conter exatamente o SKU salvo no cadastro. Em desenvolvimento, use `http://localhost` (contexto seguro reconhecido pelo navegador); fora de localhost, o acesso a camera exige HTTPS. A camera e iniciada somente apos o clique e e desligada ao fechar a janela ou sair da pagina.
-
-#### O que cada camada faz no leitor
-
-- `produtoRoutes.js`: disponibiliza `GET /buscar` sob o middleware JWT.
-- `produtoController.js`: le `sku` da query e converte sucesso/erro em respostas HTTP.
-- `produtoService.js`: remove espacos, padroniza maiusculas, valida tamanho e trata SKU nao encontrado.
-- `produtoModel.js`: executa consulta parametrizada limitada por `empresa_id` e `ativo = true`.
-- `cadastroProduto.html`: declara janela, video da camera, busca manual e resultado.
-- `cadastroProduto.js`: inicia/para a camera, busca SKU com JWT e apresenta o produto com seguranca.
-- `cadastroProduto.css`: cuida da apresentacao responsiva dos elementos do leitor.
-- `server.js`: serve o arquivo UMD da dependencia sem uma etapa de build do frontend.
-
-Essa funcionalidade nao exige alteracao no banco de dados. Ela reutiliza `produtos.sku` e somente consulta o produto; nao movimenta nem altera estoque.
+O leitor usa `@zxing/browser`, servido localmente pelo Express em `/vendor/zxing`. Ele tambem aceita digitacao manual quando nao ha camera. Em desenvolvimento, use `localhost`; em hospedagem, o navegador exige HTTPS para permitir acesso a camera. Nao e necessaria alteracao no banco, pois o codigo lido e comparado ao `produtos.sku` da empresa autenticada.
 
 ## Publicar depois no Supabase e Render
 
@@ -119,6 +133,6 @@ Essa funcionalidade nao exige alteracao no banco de dados. Ela reutiliza `produt
 
 ## Limitações atuais
 
-O sistema tem login, a rota `/api/auth/me` e cadastro/listagem/edição/inativação de produtos. Ainda não implementa cadastro de empresa pelo site, recuperação de senha, logout, renovação do JWT, reativação de produtos, saldo de estoque ou endpoints de clientes e pedidos. Cada empresa compartilha uma conta de login; contas individuais de funcionários exigiriam uma evolução futura.
+O sistema tem login, a rota `/api/auth/me`, cadastro/listagem/edição/inativação de produtos e movimentação básica de estoque. Ainda não implementa cadastro de empresa pelo site, recuperação de senha, logout, renovação do JWT, reativação de produtos, estorno/ajuste de movimentos ou endpoints de clientes e pedidos. Cada empresa compartilha uma conta de login; contas individuais de funcionários exigiriam uma evolução futura.
 
 `npm test` ainda é apenas um placeholder, sem suíte automatizada.
