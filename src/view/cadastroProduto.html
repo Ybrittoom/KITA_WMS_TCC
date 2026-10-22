@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/public/css/cadastroProduto.css">
+  <link rel="stylesheet" href="/public/css/barcodeScanner.css">
 </head>
 <body>
   <div class="app-layout">
@@ -78,7 +79,13 @@
       </div>
 
       <!-- O ZXing usa este video como pre-visualizacao e fonte dos quadros da camera. -->
+      <label class="camera-setting" for="scanner-camera-select">Câmera a usar
+        <select id="scanner-camera-select"><option value="">Câmera padrão (automática)</option></select>
+      </label>
       <video id="scanner-video" class="scanner-video" muted playsinline></video>
+      <label class="camera-setting camera-zoom" id="scanner-zoom-group" hidden for="scanner-zoom">Zoom da câmera
+        <span><input id="scanner-zoom" type="range" min="1" max="2" step="0.1"><output id="scanner-zoom-value">1.0×</output></span>
+      </label>
       <p class="scanner-status" id="scanner-status" role="status" aria-live="polite">Inicie a camera ou digite o SKU manualmente.</p>
 
       <!-- Busca manual continua disponivel caso a camera nao exista ou seja negada. -->
@@ -169,6 +176,7 @@
 
   <!-- ZXing fornece o decodificador 1D/2D localmente, sem CDN no navegador. -->
   <script src="/vendor/zxing/zxing-browser.min.js" defer></script>
+  <script src="/public/js/cameraHelpers.js" defer></script>
   <script src="/public/js/cadastroProduto.js" defer></script>
 </body>
 </html>

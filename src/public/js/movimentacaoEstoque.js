@@ -20,6 +20,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const scannerInput = document.getElementById("stock-scanner-sku");
   const scannerProduct = document.getElementById("stock-scanner-product");
   const useScannedProductButton = document.getElementById("use-scanned-product");
+  const cameraSelect = document.getElementById("stock-camera-select");
+  const zoomGroup = document.getElementById("stock-zoom-group");
+  const zoomSlider = document.getElementById("stock-camera-zoom");
+  const zoomValue = document.getElementById("stock-camera-zoom-value");
   let products = [];
   let barcodeReader = null;
   let cameraControls = null;
@@ -99,6 +103,9 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("stock-scanner-catalog-link").hidden = true;
     scannedProduct = null;
     codeAlreadyHandled = false;
+    void window.KitaCameraHelpers.listarCameras(cameraSelect).catch(() => {
+      scannerStatus.textContent = "Não foi possível listar as câmeras. Tente iniciar a câmera automaticamente.";
+    });
     document.getElementById("start-stock-camera").focus();
   }
 
@@ -115,6 +122,7 @@ document.addEventListener("DOMContentLoaded", () => {
     scannerVideo.pause();
     scannerVideo.srcObject = null;
     barcodeReader = null;
+    zoomGroup.hidden = true;
     cameraStarting = false;
     document.getElementById("start-stock-camera").disabled = false;
     document.getElementById("stop-stock-camera").disabled = true;
@@ -179,7 +187,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       barcodeReader = new window.ZXingBrowser.BrowserMultiFormatReader();
-      const controls = await barcodeReader.decodeFromVideoDevice(undefined, scannerVideo, (result) => {
+      const controls = await barcodeReader.decodeFromVideoDevice(cameraSelect.value || undefined, scannerVideo, (result) => {
         if (tentativa !== cameraGeneration || !result || codeAlreadyHandled) return;
         codeAlreadyHandled = true;
         const codigo = result.getText();
@@ -196,7 +204,22 @@ document.addEventListener("DOMContentLoaded", () => {
       cameraControls = controls;
       cameraStarting = false;
       document.getElementById("stop-stock-camera").disabled = false;
-      scannerStatus.textContent = "Aponte a câmera para o código de barras do produto.";
+
+      // Algumas câmeras permitem foco contínuo e zoom; o helper só tenta o que o aparelho anuncia.
+      const videoTrack = scannerVideo.srcObject?.getVideoTracks?.()[0];
+      const focoAtivo = await window.KitaCameraHelpers.ativarFocoContinuo(scannerVideo);
+      const zoomDisponivel = window.KitaCameraHelpers.configurarZoom(
+        scannerVideo, zoomGroup, zoomSlider, zoomValue
+      );
+      if (tentativa !== cameraGeneration) return;
+      const cameraAtiva = videoTrack?.getSettings?.().deviceId || cameraSelect.value;
+      await window.KitaCameraHelpers.listarCameras(cameraSelect, cameraAtiva).catch(() => {});
+      if (tentativa !== cameraGeneration) return;
+
+      scannerStatus.textContent = focoAtivo
+        ? "Foco contínuo ativo. Aponte a câmera para o código de barras."
+        : "Aponte a câmera para o código. O foco automático depende do aparelho.";
+      if (!zoomDisponivel) zoomGroup.hidden = true;
     } catch (error) {
       if (tentativa !== cameraGeneration) return;
       pararCameraEstoque();
@@ -301,6 +324,16 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("open-stock-scanner").addEventListener("click", abrirLeitor);
   document.getElementById("close-stock-scanner").addEventListener("click", fecharLeitor);
   document.getElementById("start-stock-camera").addEventListener("click", iniciarCameraEstoque);
+  cameraSelect.addEventListener("change", () => {
+    if (!cameraControls && !cameraStarting) return;
+    pararCameraEstoque();
+    void iniciarCameraEstoque();
+  });
+  zoomSlider.addEventListener("change", () => {
+    void window.KitaCameraHelpers.aplicarZoom(scannerVideo, zoomSlider, zoomValue).then((aplicado) => {
+      if (!aplicado) scannerStatus.textContent = "Este aparelho não conseguiu aplicar o zoom solicitado.";
+    });
+  });
   document.getElementById("stop-stock-camera").addEventListener("click", () => {
     pararCameraEstoque();
     scannerStatus.textContent = "Câmera parada. Digite o SKU ou inicie a câmera novamente.";

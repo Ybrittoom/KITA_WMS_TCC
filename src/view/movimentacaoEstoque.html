@@ -85,7 +85,13 @@
         </div>
         <button class="scanner-close" type="button" id="close-stock-scanner" aria-label="Fechar leitor">&times;</button>
       </div>
+      <label class="camera-setting" for="stock-camera-select">Câmera a usar
+        <select id="stock-camera-select"><option value="">Câmera padrão (automática)</option></select>
+      </label>
       <video id="stock-scanner-video" muted playsinline></video>
+      <label class="camera-setting camera-zoom" id="stock-zoom-group" hidden for="stock-camera-zoom">Zoom da câmera
+        <span><input id="stock-camera-zoom" type="range" min="1" max="2" step="0.1"><output id="stock-camera-zoom-value">1.0×</output></span>
+      </label>
       <p class="scanner-status" id="stock-scanner-status" role="status" aria-live="polite">Inicie a câmera ou digite o SKU.</p>
       <form class="scanner-manual-form" id="stock-scanner-form">
         <label class="field">SKU lido ou digitado
@@ -108,6 +114,7 @@
   </div>
   <!-- O Express serve a biblioteca localmente, sem dependência de CDN. -->
   <script src="/vendor/zxing/zxing-browser.min.js" defer></script>
+  <script src="/public/js/cameraHelpers.js" defer></script>
   <script src="/public/js/movimentacaoEstoque.js" defer></script>
 </body>
 </html>

@@ -123,6 +123,8 @@ Na tela de produtos, **Ler codigo de barras** abre o leitor, procura o SKU na em
 
 O leitor usa `@zxing/browser`, servido localmente pelo Express em `/vendor/zxing`. Ele tambem aceita digitacao manual quando nao ha camera. Em desenvolvimento, use `localhost`; em hospedagem, o navegador exige HTTPS para permitir acesso a camera. Nao e necessaria alteracao no banco, pois o codigo lido e comparado ao `produtos.sku` da empresa autenticada.
 
+Os dois leitores mostram as cameras disponibilizadas pelo navegador e permitem escolher uma pelo dispositivo. Depois da permissao, a lista e atualizada com os nomes fornecidos pelo aparelho. O foco continuo e o controle deslizante de zoom aparecem ou sao aplicados apenas se a camera reportar suporte; os recursos variam entre modelos e navegadores. `src/public/js/cameraHelpers.js` centraliza essa deteccao e configuracao.
+
 ## Publicar depois no Supabase e Render
 
 1. Crie um projeto Supabase novo para não misturar o banco local ou tabelas antigas.

@@ -19,6 +19,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const scannerStatus = document.getElementById("scanner-status");
   const scannerInput = document.getElementById("scanner-sku");
   const scannerResult = document.getElementById("scanner-result");
+  const cameraSelect = document.getElementById("scanner-camera-select");
+  const zoomGroup = document.getElementById("scanner-zoom-group");
+  const zoomSlider = document.getElementById("scanner-zoom");
+  const zoomValue = document.getElementById("scanner-zoom-value");
   const saveButton = document.getElementById("btn-save-product");
   const confirmDeleteButton = document.getElementById("btn-confirm-delete");
   // O leitor e o controle devolvido pelo ZXing sao mantidos para encerrar a camera.
@@ -47,6 +51,9 @@ document.addEventListener("DOMContentLoaded", () => {
     scannerResult.hidden = true;
     document.getElementById("btn-prefill-product").hidden = true;
     codeAlreadyHandled = false;
+    void window.KitaCameraHelpers.listarCameras(cameraSelect).catch(() => {
+      scannerStatus.textContent = "Nao foi possivel listar as cameras. Tente iniciar a camera automaticamente.";
+    });
     document.getElementById("btn-start-camera").focus();
   };
 
@@ -72,6 +79,7 @@ document.addEventListener("DOMContentLoaded", () => {
     scannerVideo.pause();
     scannerVideo.srcObject = null;
     barcodeReader = null;
+    zoomGroup.hidden = true;
     cameraStarting = false;
     document.getElementById("btn-start-camera").disabled = false;
     document.getElementById("btn-stop-camera").disabled = true;
@@ -143,7 +151,7 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       barcodeReader = new window.ZXingBrowser.BrowserMultiFormatReader();
       const controls = await barcodeReader.decodeFromVideoDevice(
-        undefined, // undefined deixa o navegador escolher a camera padrao.
+        cameraSelect.value || undefined, // ID explicito permite evitar a lente ultrawide selecionada automaticamente.
         scannerVideo,
         (result) => {
           // Callback de uma tentativa antiga nao pode agir sobre uma camera nova.
@@ -180,7 +188,22 @@ document.addEventListener("DOMContentLoaded", () => {
       cameraControls = controls;
       cameraStarting = false;
       document.getElementById("btn-stop-camera").disabled = false;
-      scannerStatus.textContent = "Aponte a camera para o codigo de barras do produto.";
+
+      // Atualiza nomes depois da permissao, solicita foco automatico e mostra zoom se suportado.
+      const videoTrack = scannerVideo.srcObject?.getVideoTracks?.()[0];
+      const focoAtivo = await window.KitaCameraHelpers.ativarFocoContinuo(scannerVideo);
+      const zoomDisponivel = window.KitaCameraHelpers.configurarZoom(
+        scannerVideo, zoomGroup, zoomSlider, zoomValue
+      );
+      if (thisCameraGeneration !== cameraGeneration) return;
+      const cameraAtiva = videoTrack?.getSettings?.().deviceId || cameraSelect.value;
+      await window.KitaCameraHelpers.listarCameras(cameraSelect, cameraAtiva).catch(() => {});
+      if (thisCameraGeneration !== cameraGeneration) return;
+
+      scannerStatus.textContent = focoAtivo
+        ? "Foco contínuo ativo. Aponte a câmera para o código de barras do produto."
+        : "Aponte a câmera para o código de barras. O foco automático depende do aparelho.";
+      if (!zoomDisponivel) zoomGroup.hidden = true;
     } catch (error) {
       // Um erro de uma tentativa cancelada nao deve parar a tentativa mais recente.
       if (thisCameraGeneration !== cameraGeneration) return;
@@ -374,6 +397,16 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("btn-open-scanner").addEventListener("click", openScanner);
   document.getElementById("btn-close-scanner").addEventListener("click", closeScanner);
   document.getElementById("btn-start-camera").addEventListener("click", startCamera);
+  cameraSelect.addEventListener("change", () => {
+    if (!cameraControls && !cameraStarting) return;
+    stopCamera();
+    void startCamera();
+  });
+  zoomSlider.addEventListener("change", () => {
+    void window.KitaCameraHelpers.aplicarZoom(scannerVideo, zoomSlider, zoomValue).then((aplicado) => {
+      if (!aplicado) scannerStatus.textContent = "Este aparelho não conseguiu aplicar o zoom solicitado.";
+    });
+  });
   document.getElementById("btn-stop-camera").addEventListener("click", () => {
     stopCamera();
     scannerStatus.textContent = "Camera parada. Voce pode digitar o SKU ou reiniciar a camera.";
