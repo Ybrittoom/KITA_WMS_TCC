@@ -13,6 +13,7 @@ const zxingBrowserPath = fileURLToPath(new URL("../node_modules/@zxing/browser/u
 const loginPath = fileURLToPath(new URL("./view/login.html", import.meta.url));
 const cadastroProdutoPath = fileURLToPath(new URL("./view/cadastroProduto.html", import.meta.url));
 const movimentacaoEstoquePath = fileURLToPath(new URL("./view/movimentacaoEstoque.html", import.meta.url));
+const mapaEstoquePath = fileURLToPath(new URL("./view/mapaEstoque.html", import.meta.url));
 
 app.use(express.json({ limit: "10kb" }));
 app.use("/public", express.static(publicPath));
@@ -33,6 +34,11 @@ app.get("/produtos/cadastro", (_req, res) => {
 // A tela fica acessivel por URL direta; os dados continuam protegidos por JWT.
 app.get("/estoque/movimentacoes", (_req, res) => {
   res.sendFile(movimentacaoEstoquePath);
+});
+
+// O mapa e uma pagina independente; seus dados continuam protegidos pela API JWT.
+app.get("/estoque/mapa", (_req, res) => {
+  res.sendFile(mapaEstoquePath);
 });
 
 app.use((error, _req, res, _next) => {

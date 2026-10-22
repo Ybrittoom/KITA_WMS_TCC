@@ -1,10 +1,16 @@
 import {
+  atualizarEndereco,
   buscarLocalDaEmpresa,
+  excluirEndereco,
+  inserirEndereco,
   inserirLocalDaEmpresa,
   inserirMovimentacaoDaEmpresa,
+  listarEnderecosDoMapa,
   listarLocaisDaEmpresa,
   listarMovimentacoesDoLocal,
   listarSaldosDoLocal,
+  moverProdutoParaEndereco,
+  retirarProdutoDoEndereco,
 } from "../model/estoqueModel.js";
 
 /** Cria um erro com codigo conhecido para o controller escolher o status HTTP. */
@@ -66,6 +72,115 @@ export async function buscarMovimentacoesDoLocal(empresaId, estoqueIdInformado) 
   }
 
   return listarMovimentacoesDoLocal(empresaId, estoqueId);
+}
+
+/** Valida um ID numerico antes de usa-lo em consultas do mapa. */
+function validarIdMapa(valor, campo) {
+  try {
+    return validarId(valor, campo);
+  } catch {
+    throw criarErroEstoque("STOCK_INVALID_ID", `O identificador de ${campo} e invalido.`);
+  }
+}
+
+/** Confere que um campo do endereco e curto e nao vazio. */
+function validarParteEndereco(valor, campo) {
+  const texto = typeof valor === "string" ? valor.trim() : "";
+  if (!texto || texto.length > 40) {
+    throw criarErroEstoque("STOCK_INVALID_ADDRESS", `Preencha ${campo} com ate 40 caracteres.`);
+  }
+  return texto;
+}
+
+/** Limpa os campos que compoem a posicao fisica no mapa. */
+function validarEndereco(dados) {
+  const nome = typeof dados?.nome === "string" ? dados.nome.trim() : "";
+  if (nome.length > 100) {
+    throw criarErroEstoque("STOCK_INVALID_ADDRESS", "O nome da posicao pode ter ate 100 caracteres.");
+  }
+  return {
+    corredor: validarParteEndereco(dados?.corredor, "o corredor"),
+    estante: validarParteEndereco(dados?.estante, "a estante"),
+    prateleira: validarParteEndereco(dados?.prateleira, "a prateleira"),
+    posicao: validarParteEndereco(dados?.posicao, "a posicao"),
+    nome: nome || null,
+  };
+}
+
+/** Lista o mapa depois de verificar que o local pertence ao tenant do JWT. */
+export async function buscarMapaDoLocal(empresaId, estoqueIdInformado) {
+  const estoqueId = validarIdMapa(estoqueIdInformado, "local");
+  const local = await buscarLocalDaEmpresa(empresaId, estoqueId);
+  if (!local) throw criarErroEstoque("STOCK_LOCATION_NOT_FOUND", "Local nao encontrado nesta empresa.");
+  const enderecos = await listarEnderecosDoMapa(empresaId, estoqueId);
+  return { local, enderecos };
+}
+
+/** Registra uma posicao no mapa fisico do local selecionado. */
+export async function cadastrarEndereco(empresaId, estoqueIdInformado, dados) {
+  const estoqueId = validarIdMapa(estoqueIdInformado, "local");
+  if (!await buscarLocalDaEmpresa(empresaId, estoqueId)) {
+    throw criarErroEstoque("STOCK_LOCATION_NOT_FOUND", "Local nao encontrado nesta empresa.");
+  }
+  const endereco = validarEndereco(dados);
+  try {
+    return await inserirEndereco(empresaId, estoqueId, endereco);
+  } catch (error) {
+    if (error.code === "23505") {
+      throw criarErroEstoque("STOCK_ADDRESS_CONFLICT", "Essa posicao ja existe neste local.");
+    }
+    throw error;
+  }
+}
+
+/** Edita o nome e as coordenadas de uma posicao existente. */
+export async function editarEndereco(empresaId, enderecoIdInformado, dados) {
+  const enderecoId = validarIdMapa(enderecoIdInformado, "posicao");
+  const endereco = validarEndereco(dados);
+  try {
+    const atualizado = await atualizarEndereco(empresaId, enderecoId, endereco);
+    if (!atualizado) throw criarErroEstoque("STOCK_ADDRESS_NOT_FOUND", "Posicao nao encontrada nesta empresa.");
+    return atualizado;
+  } catch (error) {
+    if (error.code === "23505") {
+      throw criarErroEstoque("STOCK_ADDRESS_CONFLICT", "Essa posicao ja existe neste local.");
+    }
+    throw error;
+  }
+}
+
+/** Impede apagar uma posicao que ainda guarda um produto. */
+export async function removerEndereco(empresaId, enderecoIdInformado) {
+  const enderecoId = validarIdMapa(enderecoIdInformado, "posicao");
+  const removido = await excluirEndereco(empresaId, enderecoId);
+  if (!removido) {
+    throw criarErroEstoque("STOCK_ADDRESS_IN_USE", "Posicao nao encontrada ou ainda ocupada por um produto.");
+  }
+}
+
+/** Move o produto para outra posicao do mesmo local, com verificacao de empresa. */
+export async function moverProdutoNoMapa(empresaId, enderecoIdInformado, dados) {
+  const enderecoId = validarIdMapa(enderecoIdInformado, "posicao");
+  const estoqueId = validarIdMapa(dados?.estoque_id, "local");
+  const produtoId = validarIdMapa(dados?.produto_id, "produto");
+  const resultado = await moverProdutoParaEndereco(empresaId, estoqueId, enderecoId, produtoId);
+  if (resultado.tipo === "endereco") {
+    throw criarErroEstoque("STOCK_ADDRESS_NOT_FOUND", "Posicao nao encontrada neste local da empresa.");
+  }
+  if (resultado.tipo === "produto") {
+    throw criarErroEstoque("STOCK_REFERENCE_NOT_FOUND", "Produto nao encontrado ou inativo nesta empresa.");
+  }
+  if (resultado.tipo === "ocupado") {
+    throw criarErroEstoque("STOCK_ADDRESS_OCCUPIED", "Essa posicao ja esta ocupada por outro produto.");
+  }
+}
+
+/** Libera um produto da posicao para que possa ser guardado em outro lugar. */
+export async function liberarProdutoDoMapa(empresaId, enderecoIdInformado, dados) {
+  const enderecoId = validarIdMapa(enderecoIdInformado, "posicao");
+  const estoqueId = validarIdMapa(dados?.estoque_id, "local");
+  const liberado = await retirarProdutoDoEndereco(empresaId, estoqueId, enderecoId);
+  if (!liberado) throw criarErroEstoque("STOCK_ADDRESS_NOT_FOUND", "Produto nao encontrado nesta posicao.");
 }
 
 /**

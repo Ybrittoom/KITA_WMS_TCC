@@ -125,6 +125,14 @@ O leitor usa `@zxing/browser`, servido localmente pelo Express em `/vendor/zxing
 
 Os dois leitores mostram as cameras disponibilizadas pelo navegador e permitem escolher uma pelo dispositivo. Depois da permissao, a lista e atualizada com os nomes fornecidos pelo aparelho. O foco continuo e o controle deslizante de zoom aparecem ou sao aplicados apenas se a camera reportar suporte; os recursos variam entre modelos e navegadores. `src/public/js/cameraHelpers.js` centraliza essa deteccao e configuracao.
 
+### Mapa físico do estoque
+
+A tela `/estoque/mapa` organiza endereços por corredor, estante, prateleira e posição. Selecione um local de estoque, crie suas posições e associe um produto a cada endereço. Para mudar um produto de lugar, escolha a nova posição no cartão; a posição anterior fica livre. O mapa é independente do registro de entradas e saídas: mover um produto não muda o saldo nem cria uma movimentação.
+
+Antes de abrir a tela pela primeira vez, execute `database/migracao_mapa_estoque.sql` uma vez em cada banco (PostgreSQL local e, quando publicar essa versão, Supabase). A migração adiciona `public.enderecos_estoque` e `public.produto_enderecos`, preservando os dados atuais. O endereço é a posição principal do produto naquele local; o saldo continua consolidado por local, como no fluxo atual.
+
+As rotas do mapa ficam em `/api/estoque/mapa`, `/api/estoque/enderecos` e `/api/estoque/enderecos/:id/produto`; todas exigem o JWT. As consultas também conferem empresa e local no banco, e uma posição ocupada não pode ser excluída. Arquivos principais: `src/view/mapaEstoque.html`, `src/public/js/mapaEstoque.js`, `src/public/css/mapaEstoque.css` e as camadas MVC de estoque.
+
 ## Publicar depois no Supabase e Render
 
 1. Crie um projeto Supabase novo para não misturar o banco local ou tabelas antigas.

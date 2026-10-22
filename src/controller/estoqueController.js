@@ -1,17 +1,23 @@
 import {
+  buscarMapaDoLocal,
   buscarLocaisDaEmpresa,
   buscarMovimentacoesDoLocal,
   buscarSaldosDoLocal,
+  cadastrarEndereco,
   cadastrarLocalDaEmpresa,
+  editarEndereco,
+  liberarProdutoDoMapa,
+  moverProdutoNoMapa,
+  removerEndereco,
   registrarMovimentacao,
 } from "../service/estoqueService.js";
 
 /** Converte erros de validacao/negocio em status HTTP e esconde detalhes internos. */
 function responderErroEstoque(res, error, operacao) {
-  if (error.code === "STOCK_LOCATION_NOT_FOUND" || error.code === "STOCK_REFERENCE_NOT_FOUND") {
+  if (["STOCK_LOCATION_NOT_FOUND", "STOCK_REFERENCE_NOT_FOUND", "STOCK_ADDRESS_NOT_FOUND"].includes(error.code)) {
     return res.status(404).json({ erro: error.message });
   }
-  if (error.code === "STOCK_INSUFFICIENT_BALANCE") {
+  if (["STOCK_INSUFFICIENT_BALANCE", "STOCK_ADDRESS_CONFLICT", "STOCK_ADDRESS_IN_USE", "STOCK_ADDRESS_OCCUPIED"].includes(error.code)) {
     return res.status(409).json({ erro: error.message });
   }
   if (error.code?.startsWith("STOCK_INVALID_")) {
@@ -20,6 +26,66 @@ function responderErroEstoque(res, error, operacao) {
 
   console.error(`Falha ao ${operacao}:`, error.message);
   return res.status(500).json({ erro: `Nao foi possivel ${operacao}.` });
+}
+
+/** Retorna todas as posicoes e o produto guardado em cada uma. */
+export async function listarMapa(req, res) {
+  try {
+    const mapa = await buscarMapaDoLocal(req.empresaAuth.id, req.query.estoque_id);
+    return res.status(200).json(mapa);
+  } catch (error) {
+    return responderErroEstoque(res, error, "carregar o mapa do estoque");
+  }
+}
+
+/** Cria uma posicao fisica dentro de um local da empresa autenticada. */
+export async function criarEndereco(req, res) {
+  try {
+    const endereco = await cadastrarEndereco(req.empresaAuth.id, req.body.estoque_id, req.body);
+    return res.status(201).json({ mensagem: "Posicao criada no mapa.", endereco });
+  } catch (error) {
+    return responderErroEstoque(res, error, "criar a posicao");
+  }
+}
+
+/** Atualiza corredor, estante, prateleira, posicao ou nome amigavel. */
+export async function atualizarEndereco(req, res) {
+  try {
+    const endereco = await editarEndereco(req.empresaAuth.id, req.params.id, req.body);
+    return res.status(200).json({ mensagem: "Posicao atualizada.", endereco });
+  } catch (error) {
+    return responderErroEstoque(res, error, "atualizar a posicao");
+  }
+}
+
+/** Remove apenas posicoes que nao tenham produto guardado. */
+export async function deletarEndereco(req, res) {
+  try {
+    await removerEndereco(req.empresaAuth.id, req.params.id);
+    return res.status(200).json({ mensagem: "Posicao removida do mapa." });
+  } catch (error) {
+    return responderErroEstoque(res, error, "remover a posicao");
+  }
+}
+
+/** Guarda ou move um produto para a posicao selecionada. */
+export async function atribuirProdutoEndereco(req, res) {
+  try {
+    await moverProdutoNoMapa(req.empresaAuth.id, req.params.id, req.body);
+    return res.status(200).json({ mensagem: "Produto movido para a posicao selecionada." });
+  } catch (error) {
+    return responderErroEstoque(res, error, "mover o produto");
+  }
+}
+
+/** Remove a associacao atual sem apagar o produto nem a posicao. */
+export async function desocuparEndereco(req, res) {
+  try {
+    await liberarProdutoDoMapa(req.empresaAuth.id, req.params.id, req.body);
+    return res.status(200).json({ mensagem: "Produto retirado da posicao." });
+  } catch (error) {
+    return responderErroEstoque(res, error, "retirar o produto da posicao");
+  }
 }
 
 /** Retorna apenas os locais de estoque da empresa autenticada. */

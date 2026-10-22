@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mapa do estoque - KITA WMS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/public/css/mapaEstoque.css">
+</head>
+<body>
+  <div class="page">
+    <header class="app-header">
+      <a class="brand" href="/estoque/movimentacoes">KITA WMS</a>
+      <div><span class="muted">Empresa logada</span><strong id="company-name">Carregando...</strong></div>
+      <nav><a href="/estoque/movimentacoes">Movimentações</a><a href="/produtos/cadastro">Produtos</a></nav>
+    </header>
+
+    <main>
+      <section class="intro">
+        <div><h1>Mapa físico do estoque</h1><p>Organize os endereços e encontre visualmente a posição principal dos produtos.</p></div>
+        <label class="field">Local de estoque<select id="location-select" disabled><option value="">Carregando locais...</option></select></label>
+      </section>
+      <p class="message" id="page-message" role="status" aria-live="polite"></p>
+
+      <section class="card note">
+        <strong>Como ler o mapa</strong>
+        <p>Os cartões mostram corredor, estante, prateleira e posição. Cada endereço guarda um produto principal; o saldo continua sendo controlado no local de estoque, como nas movimentações.</p>
+      </section>
+
+      <section class="card">
+        <div class="section-heading"><div><h2>Criar endereço</h2><p>Use códigos curtos, por exemplo corredor A, estante 01, prateleira 02, posição 03.</p></div></div>
+        <form id="address-form" class="address-form">
+          <label class="field">Corredor<input name="corredor" maxlength="40" required placeholder="A"></label>
+          <label class="field">Estante<input name="estante" maxlength="40" required placeholder="01"></label>
+          <label class="field">Prateleira<input name="prateleira" maxlength="40" required placeholder="02"></label>
+          <label class="field">Posição<input name="posicao" maxlength="40" required placeholder="03"></label>
+          <label class="field">Nome amigável (opcional)<input name="nome" maxlength="100" placeholder="Ex.: Produtos frágeis"></label>
+          <button class="button primary" id="create-address-button" type="submit">Adicionar ao mapa</button>
+        </form>
+      </section>
+
+      <section class="map-section" aria-live="polite">
+        <div class="section-heading"><div><h2>Endereços cadastrados</h2><p id="map-summary">Selecione um local para abrir o mapa.</p></div></div>
+        <div id="map-content" class="map-content"></div>
+      </section>
+    </main>
+  </div>
+  <script src="/public/js/mapaEstoque.js" defer></script>
+</body>
+</html>
