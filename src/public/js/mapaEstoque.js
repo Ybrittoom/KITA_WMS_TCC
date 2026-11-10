@@ -11,6 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const message = document.getElementById("page-message");
   const summary = document.getElementById("map-summary");
   const addressForm = document.getElementById("address-form");
+  const requestedLocation = new URLSearchParams(window.location.search).get("estoque_id");
   let produtos = [];
 
   /** Faz chamadas autenticadas e apresenta mensagens da API ao utilizador. */
@@ -202,7 +203,9 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
     // Abre o primeiro local automaticamente para que o mapa apareca logo ao entrar.
-    localSelect.value = String(locais.locais[0].id);
+    localSelect.value = locais.locais.some((local) => String(local.id) === requestedLocation)
+      ? requestedLocation
+      : String(locais.locais[0].id);
     await carregarMapa();
   }
 

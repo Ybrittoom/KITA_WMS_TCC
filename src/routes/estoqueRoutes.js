@@ -8,8 +8,10 @@ import {
   deletarEndereco,
   desocuparEndereco,
   listarMapa,
+  listarHistorico,
   listarLocais,
   listarMovimentacoes,
+  resumoDashboard,
   listarSaldos,
 } from "../controller/estoqueController.js";
 import { autenticarEmpresa } from "../middleware/autenticarEmpresa.js";
@@ -24,6 +26,8 @@ router.get("/locais", listarLocais);
 router.post("/locais", criarLocal);
 
 // O mapa e os enderecos fisicos tambem ficam sob autenticacao por JWT.
+router.get("/resumo", resumoDashboard);
+router.get("/historico", listarHistorico);
 router.get("/mapa", listarMapa);
 router.post("/enderecos", criarEndereco);
 router.put("/enderecos/:id", atualizarEndereco);

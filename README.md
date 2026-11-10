@@ -55,7 +55,7 @@ npm run dev
 
 Abra `http://localhost:8081/login` e entre com uma empresa cadastrada. O endpoint `POST /api/auth/login` recebe `{ "email": "...", "senha": "..." }`. `GET /api/auth/me` retorna a empresa autenticada e exige `Authorization: Bearer <token>`.
 
-Depois do login, acesse **manualmente**, na mesma aba e no mesmo navegador, `http://localhost:8081/produtos/cadastro`. Essa página não é ligada à tela de login e não há redirecionamento após entrar. Sem sessão válida, a página retorna para o login.
+Após o login, o sistema abre o painel em `http://localhost:8081/home`. As telas verificam a sessão no navegador e todas as APIs operacionais exigem JWT. A navegação principal dá acesso a produtos, locais, entradas, saídas, histórico e mapa físico.
 
 ### Cadastro de produtos
 
@@ -67,7 +67,7 @@ As rotas estão organizadas em MVC + service:
 | `src/controller/produtoController.js` | Trata requisições e respostas HTTP. |
 | `src/service/produtoService.js` | Valida nome, SKU, preço e estoque mínimo; trata SKU duplicado e inativação. |
 | `src/model/produtoModel.js` | Consulta, grava, atualiza e inativa em `public.produtos`, sempre no escopo da empresa autenticada. |
-| `src/view/cadastroProduto.html` | Tela acessada manualmente em `/produtos/cadastro`. |
+| `src/view/produtos.html` | Tela de produtos acessada em `/produtos` ou `/produtos/cadastro`. |
 | `src/public/js/cadastroProduto.js` | Envia o JWT, carrega a lista e envia o formulário. |
 
 Endpoints:
@@ -129,14 +129,22 @@ Os dois leitores mostram as cameras disponibilizadas pelo navegador e permitem e
 
 A tela `/estoque/mapa` organiza endereços por corredor, estante, prateleira e posição. Selecione um local de estoque, crie suas posições e associe um produto a cada endereço. Para mudar um produto de lugar, escolha a nova posição no cartão; a posição anterior fica livre. O mapa é independente do registro de entradas e saídas: mover um produto não muda o saldo nem cria uma movimentação.
 
-Antes de abrir a tela pela primeira vez, execute `database/migracao_mapa_estoque.sql` uma vez em cada banco (PostgreSQL local e, quando publicar essa versão, Supabase). A migração adiciona `public.enderecos_estoque` e `public.produto_enderecos`, preservando os dados atuais. O endereço é a posição principal do produto naquele local; o saldo continua consolidado por local, como no fluxo atual.
+O mapa do estoque usa tabelas proprias e exige `database/migracao_mapa_estoque.sql`. Se essa migracao ainda nao foi aplicada, deixe a pagina do mapa para depois; as outras telas novas nao precisam dela. Em um banco novo, execute `schema_simples.sql` e execute `migracao_mapa_estoque.sql` somente se quiser habilitar o mapa.
 
 As rotas do mapa ficam em `/api/estoque/mapa`, `/api/estoque/enderecos` e `/api/estoque/enderecos/:id/produto`; todas exigem o JWT. As consultas também conferem empresa e local no banco, e uma posição ocupada não pode ser excluída. Arquivos principais: `src/view/mapaEstoque.html`, `src/public/js/mapaEstoque.js`, `src/public/css/mapaEstoque.css` e as camadas MVC de estoque.
+
+### Painel, locais, operações e histórico
+
+O painel em `/home` consulta indicadores reais da empresa: quantidade de produtos ativos, unidades somadas entre locais, produtos no mínimo e locais cadastrados. O histórico em `/estoque/historico` permite filtrar as movimentações por tipo, nome/SKU e intervalo de datas. As telas `/estoque/entrada` e `/estoque/saida` usam a mesma API de movimentação já existente e verificam o saldo antes de registrar uma saída. `/estoque/locais` cadastra depósitos e oferece atalhos para abrir o mapa e consultar saldos.
+
+Rotas de página: `/home`, `/produtos`, `/estoque/locais`, `/estoque/entrada`, `/estoque/saida`, `/estoque/historico`, `/estoque/movimentacoes` e `/estoque/mapa`. A interface compartilhada adiciona navegação e saída da sessão, e se adapta a telas estreitas. `GET /api/estoque/resumo` alimenta o painel e `GET /api/estoque/historico` recebe os filtros opcionais `tipo`, `busca`, `data_inicio` e `data_fim`.
+
+A pagina de produtos calcula o saldo total com base no ultimo saldo registrado em cada local. As telas de entrada e saida gravam apenas campos que o banco atual ja suporta; categoria, motivo e documento nao sao solicitados.
 
 ## Publicar depois no Supabase e Render
 
 1. Crie um projeto Supabase novo para não misturar o banco local ou tabelas antigas.
-2. Execute `database/schema_simples.sql` no PostgreSQL do projeto e cadastre nele as empresas necessárias. O DBeaver pode conectar ao Supabase, ou você pode usar o SQL Editor do painel.
+2. Mantenha o esquema atual para painel, produtos, locais, entrada, saida e historico. O mapa exige adicionalmente `database/migracao_mapa_estoque.sql`; nao abra essa tela ate decidir aplicar a migracao no PostgreSQL local e no Supabase.
 3. Configure no Render `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_SSL=true`, `DB_SSL_CA`, `JWT_SECRET` e `JWT_EXPIRES_IN`. O Render fornece `PORT`.
 4. Baixe o certificado CA em **Database → SSL Configuration**. Disponibilize o arquivo ao serviço Render e configure `DB_SSL_CA` com o caminho correto. Nunca publique senha do banco ou segredo JWT.
 5. Use Build Command `npm install` e Start Command `npm start` no Web Service do Render.

@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Produtos - KITA WMS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/public/css/cadastroProduto.css">
+  <link rel="stylesheet" href="/public/css/barcodeScanner.css">
+  <link rel="stylesheet" href="/public/css/systemShell.css">
+</head>
+<body>
+  <div class="app-layout">
+    <header class="app-header">
+      <div class="header-content">
+        <div class="brand-group">
+          <span class="brand-badge">KITA WMS</span>
+          <div class="company-info">
+            <span class="company-label">Empresa logada</span>
+            <h2 class="company-name" id="company-name">Carregando...</h2>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <section class="page-actions">
+        <div class="page-title-group">
+          <h1 class="page-title">Produtos cadastrados</h1>
+          <p class="product-count-text">Total de <strong id="total-count">0</strong> produtos na sua empresa.</p>
+        </div>
+        <div class="page-action-buttons">
+          <button type="button" class="btn-secondary" id="btn-open-scanner">
+            Ler codigo de barras
+          </button>
+          <button type="button" class="btn-primary" id="btn-open-modal">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+            Cadastrar produto
+          </button>
+        </div>
+      </section>
+
+      <p class="page-message" id="products-message" role="status" aria-live="polite"></p>
+
+      <section class="table-card">
+        <div class="table-responsive">
+          <table class="products-table">
+            <thead>
+              <tr>
+                <th>Produto</th>
+                <th>SKU</th>
+                <th>Preço</th>
+                <th>Qtd. atual</th>
+                <th>Estoque mínimo</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="products-tbody">
+              <tr><td colspan="7">Carregando produtos...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Modal independente: a camera so e solicitada depois do clique do usuario. -->
+  <div class="modal-overlay" id="scanner-overlay" aria-hidden="true">
+    <section class="modal-card scanner-card" role="dialog" aria-modal="true" aria-labelledby="scanner-title">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title" id="scanner-title">Leitor de codigo de barras</h2>
+          <p class="modal-subtitle">Leia um codigo que contenha o SKU cadastrado do produto.</p>
+        </div>
+        <button type="button" class="btn-close" id="btn-close-scanner" aria-label="Fechar leitor">&times;</button>
+      </div>
+
+      <!-- O ZXing usa este video como pre-visualizacao e fonte dos quadros da camera. -->
+      <label class="camera-setting" for="scanner-camera-select">Câmera a usar
+        <select id="scanner-camera-select"><option value="">Câmera padrão (automática)</option></select>
+      </label>
+      <video id="scanner-video" class="scanner-video" muted playsinline></video>
+      <label class="camera-setting camera-zoom" id="scanner-zoom-group" hidden for="scanner-zoom">Zoom da câmera
+        <span><input id="scanner-zoom" type="range" min="1" max="2" step="0.1"><output id="scanner-zoom-value">1.0×</output></span>
+      </label>
+      <p class="scanner-status" id="scanner-status" role="status" aria-live="polite">Inicie a camera ou digite o SKU manualmente.</p>
+
+      <!-- Busca manual continua disponivel caso a camera nao exista ou seja negada. -->
+      <form class="scanner-manual" id="scanner-manual-form">
+        <div class="input-group">
+          <label for="scanner-sku">SKU lido ou digitado</label>
+          <input type="text" id="scanner-sku" maxlength="80" autocomplete="off" placeholder="Ex.: PROD-001">
+        </div>
+        <button type="submit" class="btn-primary" id="btn-search-sku">Buscar SKU</button>
+      </form>
+
+      <!-- Resultado usa textContent via JavaScript; dados do banco nao viram HTML. -->
+      <div class="scanner-result" id="scanner-result" hidden>
+        <strong id="scanner-product-name"></strong>
+        <span>SKU: <code id="scanner-product-sku"></code></span>
+        <span>Preco: <span id="scanner-product-price"></span></span>
+      </div>
+      <button type="button" class="btn-secondary scanner-create-button" id="btn-prefill-product" hidden>Usar SKU em novo cadastro</button>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" id="btn-start-camera">Iniciar camera</button>
+        <button type="button" class="btn-secondary" id="btn-stop-camera" disabled>Parar camera</button>
+      </div>
+    </section>
+  </div>
+
+  <div class="modal-overlay" id="modal-overlay" aria-hidden="true">
+    <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title" id="modal-title">Novo produto</h2>
+          <p class="modal-subtitle">O produto será vinculado à empresa da sessão atual.</p>
+        </div>
+        <button type="button" class="btn-close" id="btn-close-modal" aria-label="Fechar">&times;</button>
+      </div>
+
+      <form class="modal-form" id="product-form">
+        <div class="input-group">
+          <label for="nome">Nome do produto</label>
+          <input type="text" id="nome" name="nome" maxlength="160" required>
+        </div>
+
+        <div class="form-row">
+          <div class="input-group">
+            <label for="sku">Código SKU</label>
+            <input type="text" id="sku" name="sku" maxlength="80" required>
+          </div>
+          <div class="input-group">
+            <label for="preco">Preço (R$)</label>
+            <input type="number" id="preco" name="preco" min="0" step="0.01" value="0" required>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label for="estoque_minimo">Estoque mínimo</label>
+          <input type="number" id="estoque_minimo" name="estoque_minimo" min="0" step="1" value="0" required>
+        </div>
+
+        <p class="form-message" id="form-message" role="alert" aria-live="assertive"></p>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" id="btn-cancel-modal">Cancelar</button>
+          <button type="submit" class="btn-primary" id="btn-save-product">Salvar produto</button>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <div class="modal-overlay" id="delete-overlay" aria-hidden="true">
+    <section class="modal-card" role="alertdialog" aria-modal="true" aria-labelledby="delete-title">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title" id="delete-title">Inativar produto?</h2>
+          <p class="modal-subtitle">Confirme antes de continuar.</p>
+        </div>
+        <button type="button" class="btn-close" id="btn-close-delete" aria-label="Fechar">&times;</button>
+      </div>
+      <p class="delete-warning">
+        O produto <strong id="delete-product-name"></strong> deixará de aparecer na lista ativa.
+        O histórico será preservado e o SKU continuará reservado para esta empresa.
+      </p>
+      <p class="form-message" id="delete-message" role="alert" aria-live="assertive"></p>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" id="btn-cancel-delete">Manter produto</button>
+        <button type="button" class="btn-danger" id="btn-confirm-delete">Inativar produto</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- ZXing fornece o decodificador 1D/2D localmente, sem CDN no navegador. -->
+  <script src="/public/js/systemShell.js" defer></script>
+  <script src="/vendor/zxing/zxing-browser.min.js" defer></script>
+  <script src="/public/js/cameraHelpers.js" defer></script>
+  <script src="/public/js/cadastroProduto.js" defer></script>
+</body>
+</html>

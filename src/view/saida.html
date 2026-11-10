@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KITA WMS | Saída de estoque</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/public/css/wmsSystem.css"><link rel="stylesheet" href="/public/css/systemShell.css">
+</head><body><div class="layout"><main class="main">
+  <header class="topbar"><div class="crumb">KITA WMS&nbsp; / &nbsp;<b>Saída de estoque</b></div><div class="top-actions"><div class="company"><div class="company-mark">K</div><span id="company-name">Carregando...</span></div></div></header>
+  <div class="content">
+    <div class="welcome"><div><div class="eyebrow">SEPARAÇÃO E EXPEDIÇÃO</div><h1>Registrar saída</h1><p>Informe o produto e a quantidade retirada do local selecionado.</p></div></div>
+    <p id="operation-message" class="message" role="status" aria-live="polite"></p>
+    <section class="panel">
+      <div class="section-head"><h3>Nova saída</h3><span>Não é permitido retirar mais do que o saldo disponível</span></div>
+      <form id="operation-form" data-operation="saida">
+        <div class="form-grid">
+          <div class="form-group"><label for="operation-location">Local de origem</label><select id="operation-location" class="form-control" required><option value="">Carregando locais...</option></select></div>
+          <div class="form-group"><label for="operation-product">Produto</label><select id="operation-product" class="form-control" required><option value="">Carregando produtos...</option></select></div>
+          <div class="form-group"><label for="operation-quantity">Quantidade a retirar</label><input id="operation-quantity" class="form-control" type="number" min="1" step="1" required placeholder="Ex.: 5"></div>
+        </div>
+        <p id="available-balance" class="stat-foot" aria-live="polite">Selecione o local e o produto para consultar o saldo.</p>
+        <div style="margin-top:18px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+          <a href="/estoque/movimentacoes" class="btn" style="background:#edf3ff;color:#174ea6">Abrir tela completa com leitor e saldo</a>
+          <button type="submit" class="btn btn-blue" style="background:var(--red)" id="operation-submit">↑ Confirmar saída</button>
+        </div>
+      </form>
+    </section>
+    <section class="panel"><div class="alert"><div class="alert-icon">!</div><div><strong>Validação de saldo</strong><p>Se a quantidade solicitada superar o saldo do local, a saída será recusada. Confira o local selecionado antes de confirmar.</p></div></div></section>
+  </div>
+</main></div>
+<script src="/public/js/systemShell.js" defer></script><script src="/public/js/operacaoEstoque.js" defer></script>
+</body></html>

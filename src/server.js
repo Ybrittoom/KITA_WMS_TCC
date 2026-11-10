@@ -11,7 +11,12 @@ const publicPath = fileURLToPath(new URL("./public/", import.meta.url));
 // Esta rota entrega o arquivo UMD oficial da dependencia como um script comum.
 const zxingBrowserPath = fileURLToPath(new URL("../node_modules/@zxing/browser/umd/", import.meta.url));
 const loginPath = fileURLToPath(new URL("./view/login.html", import.meta.url));
-const cadastroProdutoPath = fileURLToPath(new URL("./view/cadastroProduto.html", import.meta.url));
+const homePath = fileURLToPath(new URL("./view/index.html", import.meta.url));
+const produtosPath = fileURLToPath(new URL("./view/produtos.html", import.meta.url));
+const locaisPath = fileURLToPath(new URL("./view/locais.html", import.meta.url));
+const entradaPath = fileURLToPath(new URL("./view/entrada.html", import.meta.url));
+const saidaPath = fileURLToPath(new URL("./view/saida.html", import.meta.url));
+const historicoPath = fileURLToPath(new URL("./view/historico.html", import.meta.url));
 const movimentacaoEstoquePath = fileURLToPath(new URL("./view/movimentacaoEstoque.html", import.meta.url));
 const mapaEstoquePath = fileURLToPath(new URL("./view/mapaEstoque.html", import.meta.url));
 
@@ -26,10 +31,20 @@ app.get(["/", "/login"], (_req, res) => {
   res.sendFile(loginPath);
 });
 
-// A pagina pode ser aberta diretamente por URL; a API de produtos exige JWT.
-app.get("/produtos/cadastro", (_req, res) => {
-  res.sendFile(cadastroProdutoPath);
+// O painel e as telas de operacao sao apresentados depois do login.
+app.get(["/home", "/dashboard"], (_req, res) => {
+  res.sendFile(homePath);
 });
+
+// A pagina pode ser aberta diretamente por URL; a API de produtos exige JWT.
+app.get(["/produtos", "/produtos/cadastro"], (_req, res) => {
+  res.sendFile(produtosPath);
+});
+
+app.get("/estoque/locais", (_req, res) => res.sendFile(locaisPath));
+app.get("/estoque/entrada", (_req, res) => res.sendFile(entradaPath));
+app.get("/estoque/saida", (_req, res) => res.sendFile(saidaPath));
+app.get("/estoque/historico", (_req, res) => res.sendFile(historicoPath));
 
 // A tela fica acessivel por URL direta; os dados continuam protegidos por JWT.
 app.get("/estoque/movimentacoes", (_req, res) => {

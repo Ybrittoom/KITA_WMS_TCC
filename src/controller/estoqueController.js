@@ -1,7 +1,9 @@
 import {
   buscarMapaDoLocal,
+  buscarHistoricoDaEmpresa,
   buscarLocaisDaEmpresa,
   buscarMovimentacoesDoLocal,
+  buscarResumoDaEmpresa,
   buscarSaldosDoLocal,
   cadastrarEndereco,
   cadastrarLocalDaEmpresa,
@@ -28,12 +30,39 @@ function responderErroEstoque(res, error, operacao) {
   return res.status(500).json({ erro: `Nao foi possivel ${operacao}.` });
 }
 
+/** Entrega somente indicadores e movimentos da empresa autenticada. */
+export async function resumoDashboard(req, res) {
+  try {
+    const resumo = await buscarResumoDaEmpresa(req.empresaAuth.id);
+    return res.status(200).json({ resumo });
+  } catch (error) {
+    return responderErroEstoque(res, error, "carregar o painel");
+  }
+}
+
+/** Retorna o historico geral com filtros opcionais validados pelo service. */
+export async function listarHistorico(req, res) {
+  try {
+    const movimentacoes = await buscarHistoricoDaEmpresa(req.empresaAuth.id, req.query);
+    return res.status(200).json({ movimentacoes });
+  } catch (error) {
+    return responderErroEstoque(res, error, "carregar o historico");
+  }
+}
+
 /** Retorna todas as posicoes e o produto guardado em cada uma. */
 export async function listarMapa(req, res) {
   try {
     const mapa = await buscarMapaDoLocal(req.empresaAuth.id, req.query.estoque_id);
     return res.status(200).json(mapa);
   } catch (error) {
+    // O restante do estoque funciona sem as tabelas opcionais do mapa.
+    // Se elas nao existem, damos uma orientacao especifica em vez de um 500 generico.
+    if (error.code === "42P01") {
+      return res.status(503).json({
+        erro: "O mapa fisico ainda nao foi habilitado neste banco. Ele requer database/migracao_mapa_estoque.sql.",
+      });
+    }
     return responderErroEstoque(res, error, "carregar o mapa do estoque");
   }
 }

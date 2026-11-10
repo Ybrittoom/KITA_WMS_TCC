@@ -1,11 +1,13 @@
 import {
   atualizarEndereco,
+  buscarResumoDashboard,
   buscarLocalDaEmpresa,
   excluirEndereco,
   inserirEndereco,
   inserirLocalDaEmpresa,
   inserirMovimentacaoDaEmpresa,
   listarEnderecosDoMapa,
+  listarHistoricoDaEmpresa,
   listarLocaisDaEmpresa,
   listarMovimentacoesDoLocal,
   listarSaldosDoLocal,
@@ -72,6 +74,44 @@ export async function buscarMovimentacoesDoLocal(empresaId, estoqueIdInformado) 
   }
 
   return listarMovimentacoesDoLocal(empresaId, estoqueId);
+}
+
+/** Retorna os indicadores e movimentos recentes do painel da empresa. */
+export async function buscarResumoDaEmpresa(empresaId) {
+  return buscarResumoDashboard(empresaId);
+}
+
+/** Confere filtros e lista movimentacoes da empresa sem aceitar SQL do navegador. */
+export async function buscarHistoricoDaEmpresa(empresaId, filtros = {}) {
+  const tipo = typeof filtros.tipo === "string" ? filtros.tipo.trim().toLowerCase() : "";
+  const busca = typeof filtros.busca === "string" ? filtros.busca.trim() : "";
+  const dataInicio = typeof filtros.data_inicio === "string" ? filtros.data_inicio : "";
+  const dataFim = typeof filtros.data_fim === "string" ? filtros.data_fim : "";
+  const validarData = (data, nome) => {
+    if (!data) return null;
+    const parseada = new Date(`${data}T00:00:00.000Z`);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(data) || Number.isNaN(parseada.valueOf()) ||
+        parseada.toISOString().slice(0, 10) !== data) {
+      throw criarErroEstoque("STOCK_INVALID_FILTER", `A ${nome} informada e invalida.`);
+    }
+    return data;
+  };
+
+  if (tipo && !["entrada", "saida", "ajuste"].includes(tipo)) {
+    throw criarErroEstoque("STOCK_INVALID_FILTER", "Tipo de movimentacao invalido.");
+  }
+  if (busca.length > 80) {
+    throw criarErroEstoque("STOCK_INVALID_FILTER", "A busca pode ter no maximo 80 caracteres.");
+  }
+  const inicio = validarData(dataInicio, "data inicial");
+  const fim = validarData(dataFim, "data final");
+  if (inicio && fim && inicio > fim) {
+    throw criarErroEstoque("STOCK_INVALID_FILTER", "A data inicial deve ser anterior ou igual a data final.");
+  }
+
+  return listarHistoricoDaEmpresa(empresaId, {
+    tipo, busca, dataInicio: inicio, dataFim: fim, limite: 300,
+  });
 }
 
 /** Valida um ID numerico antes de usa-lo em consultas do mapa. */
@@ -204,7 +244,12 @@ export async function registrarMovimentacao(dados, empresaId) {
 
   const movimento = await inserirMovimentacaoDaEmpresa(
     empresaId,
-    { estoque_id: estoqueId, produto_id: produtoId, tipo, quantidade },
+    {
+      estoque_id: estoqueId,
+      produto_id: produtoId,
+      tipo,
+      quantidade,
+    },
     (saldoAtual) => {
       if (tipo === "saida" && quantidade > saldoAtual) {
         throw criarErroEstoque(

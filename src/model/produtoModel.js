@@ -6,10 +6,20 @@ import pool from "../config/database.js";
  */
 export async function listarProdutosPorEmpresa(empresaId) {
   const resultado = await pool.query(
-    `SELECT id, sku, nome, preco, estoque_minimo
-     FROM public.produtos
-     WHERE empresa_id = $1 AND ativo = true
-     ORDER BY nome ASC, id ASC`,
+    `SELECT p.id, p.sku, p.nome, p.preco, p.estoque_minimo,
+            COALESCE(saldo.saldo_atual, 0) AS saldo_atual
+     FROM public.produtos AS p
+     LEFT JOIN LATERAL (
+       SELECT SUM(ultimo.saldo_atual)::bigint AS saldo_atual
+       FROM (
+         SELECT DISTINCT ON (ep.estoque_id) ep.saldo_atual
+         FROM public.estoque_produto AS ep
+         WHERE ep.empresa_id = p.empresa_id AND ep.produto_id = p.id
+         ORDER BY ep.estoque_id, ep.id DESC
+       ) AS ultimo
+     ) AS saldo ON true
+     WHERE p.empresa_id = $1 AND p.ativo = true
+     ORDER BY p.nome ASC, p.id ASC`,
     [empresaId]
   );
 

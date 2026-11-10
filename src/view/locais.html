@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KITA WMS | Locais de estoque</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/public/css/wmsSystem.css"><link rel="stylesheet" href="/public/css/systemShell.css">
+</head>
+<body><div class="layout"><main class="main">
+  <header class="topbar"><div class="crumb">KITA WMS&nbsp; / &nbsp;<b>Locais de estoque</b></div><div class="top-actions"><div class="company"><div class="company-mark">K</div><span id="company-name">Carregando...</span></div></div></header>
+  <div class="content">
+    <div class="welcome"><div><div class="eyebrow">ARMAZENAGEM</div><h1>Locais de estoque</h1><p>Cadastre depósitos ou áreas de armazenamento da empresa.</p></div></div>
+    <p id="locations-message" class="message" role="status" aria-live="polite"></p>
+    <section class="panel">
+      <div class="section-head"><h3>Cadastrar local</h3><span>Ex.: Depósito principal</span></div>
+      <form id="location-form">
+        <div class="form-grid">
+          <div class="form-group"><label for="location-name">Nome do local</label><input class="form-control" id="location-name" name="nome" maxlength="120" required placeholder="Ex.: Depósito principal"></div>
+          <div class="form-group"><label for="location-address">Endereço ou observação (opcional)</label><input class="form-control" id="location-address" name="localizacao" maxlength="160" placeholder="Ex.: Rua A, prédio 2"></div>
+        </div>
+        <div style="margin-top:18px;text-align:right"><button class="btn btn-blue" id="save-location" type="submit">＋ Cadastrar local</button></div>
+      </form>
+    </section>
+    <section class="panel">
+      <div class="section-head"><h3>Locais cadastrados</h3><span id="location-count">Carregando...</span></div>
+      <div class="table-scroll"><table class="data-table"><thead><tr><th>Local</th><th>Endereço/observação</th><th>Mapa físico</th><th>Movimentações</th></tr></thead><tbody id="locations-body"><tr><td colspan="4" class="empty-row">Carregando locais...</td></tr></tbody></table></div>
+    </section>
+    <div class="footer">Os endereços internos do galpão são organizados separadamente no mapa visual.</div>
+  </div>
+</main></div>
+<script src="/public/js/systemShell.js" defer></script><script src="/public/js/locais.js" defer></script>
+</body></html>

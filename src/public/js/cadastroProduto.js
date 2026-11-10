@@ -276,7 +276,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (products.length === 0) {
       const row = document.createElement("tr");
       const cell = document.createElement("td");
-      cell.colSpan = 5;
+      cell.colSpan = 7;
       cell.textContent = "Nenhum produto ativo cadastrado nesta empresa.";
       row.append(cell);
       tableBody.append(row);
@@ -300,8 +300,18 @@ document.addEventListener("DOMContentLoaded", () => {
       const priceCell = document.createElement("td");
       priceCell.textContent = formatPrice(product.preco);
 
+      const quantityCell = document.createElement("td");
+      quantityCell.textContent = `${Number(product.saldo_atual || 0)} un`;
+
       const minimumStockCell = document.createElement("td");
       minimumStockCell.textContent = `${product.estoque_minimo} un`;
+
+      const statusCell = document.createElement("td");
+      const status = document.createElement("span");
+      const lowStock = Number(product.saldo_atual || 0) <= Number(product.estoque_minimo);
+      status.className = `stock-status ${lowStock ? "low" : "normal"}`;
+      status.textContent = lowStock ? "Estoque baixo" : "Normal";
+      statusCell.append(status);
 
       const actionsCell = document.createElement("td");
       actionsCell.className = "product-actions";
@@ -310,7 +320,7 @@ document.addEventListener("DOMContentLoaded", () => {
         createActionButton("Excluir", "btn-table btn-delete", () => openDeleteConfirmation(product))
       );
 
-      row.append(nameCell, skuCell, priceCell, minimumStockCell, actionsCell);
+      row.append(nameCell, skuCell, priceCell, quantityCell, minimumStockCell, statusCell, actionsCell);
       tableBody.append(row);
     }
   };

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KITA WMS | Histórico</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/public/css/wmsSystem.css"><link rel="stylesheet" href="/public/css/systemShell.css">
+</head><body><div class="layout"><main class="main">
+  <header class="topbar"><div class="crumb">KITA WMS&nbsp; / &nbsp;<b>Histórico</b></div><div class="top-actions"><div class="company"><div class="company-mark">K</div><span id="company-name">Carregando...</span></div></div></header>
+  <div class="content">
+    <div class="welcome"><div><div class="eyebrow">CONSULTA E RASTREABILIDADE</div><h1>Histórico de movimentações</h1><p>Pesquise as operações registradas nos locais da sua empresa.</p></div></div>
+    <p id="history-message" class="message" role="status" aria-live="polite"></p>
+    <section class="panel">
+      <div class="section-head"><h3>Filtros</h3><span>O resultado mostra até 300 operações</span></div>
+      <form id="history-filter">
+        <div class="form-grid">
+          <div class="form-group"><label for="filter-type">Tipo</label><select id="filter-type" class="form-control"><option value="">Todas</option><option value="entrada">Entradas</option><option value="saida">Saídas</option><option value="ajuste">Ajustes</option></select></div>
+          <div class="form-group"><label for="filter-search">Produto ou SKU</label><input id="filter-search" class="form-control" maxlength="80" placeholder="Digite o nome ou SKU"></div>
+          <div class="form-group"><label for="filter-start">Data inicial</label><input id="filter-start" class="form-control" type="date"></div>
+          <div class="form-group"><label for="filter-end">Data final</label><input id="filter-end" class="form-control" type="date"></div>
+        </div>
+        <div style="margin-top:18px;display:flex;justify-content:flex-end;gap:9px;flex-wrap:wrap"><button class="btn" id="clear-filters" type="button" style="background:#edf3ff;color:#174ea6">Limpar</button><button class="btn btn-blue" type="submit">⌕ Aplicar filtros</button></div>
+      </form>
+    </section>
+    <section class="panel">
+      <div class="section-head"><h3>Movimentações encontradas</h3><span id="history-count">Carregando...</span></div>
+      <div class="table-scroll"><table class="data-table"><thead><tr><th>Data e hora</th><th>Tipo</th><th>Produto</th><th>SKU</th><th>Quantidade</th><th>Local</th><th>Saldo após</th></tr></thead><tbody id="history-body"><tr><td colspan="7" class="empty-row">Carregando histórico...</td></tr></tbody></table></div>
+    </section>
+  </div>
+</main></div>
+<script src="/public/js/systemShell.js" defer></script><script src="/public/js/historico.js" defer></script>
+</body></html>

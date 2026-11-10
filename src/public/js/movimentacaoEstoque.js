@@ -5,11 +5,13 @@ document.addEventListener("DOMContentLoaded", () => {
     window.location.replace("/login");
     return;
   }
+  const requestedStockId = new URLSearchParams(window.location.search).get("estoque_id");
 
   const locationSelect = document.getElementById("location-select");
   const productSelect = document.getElementById("product-select");
   const locationForm = document.getElementById("location-form");
   const movementForm = document.getElementById("movement-form");
+  const movementTypeSelect = document.getElementById("movement-type");
   const pageMessage = document.getElementById("page-message");
   const movementMessage = document.getElementById("movement-message");
   const balanceBody = document.getElementById("balance-body");
@@ -404,7 +406,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const movimento = {
         estoque_id: locationSelect.value,
         produto_id: productSelect.value,
-        tipo: document.getElementById("movement-type").value,
+        tipo: movementTypeSelect.value,
         quantidade: Number(document.getElementById("movement-quantity").value),
       };
       const data = await requisicao("/api/estoque/movimentacoes", {
@@ -421,7 +423,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // A empresa, produtos e locais são carregados antes de usar a tela.
-  Promise.all([carregarEmpresa(), carregarProdutos(), carregarLocais()]).catch((error) => {
+  Promise.all([carregarEmpresa(), carregarProdutos(), carregarLocais(requestedStockId || undefined)]).catch((error) => {
     mostrarMensagem(pageMessage, error.message || "Não foi possível carregar os dados.");
   });
 });

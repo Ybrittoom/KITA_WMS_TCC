@@ -1,0 +1,14 @@
+.system-nav{display:flex;align-items:center;gap:6px;padding:10px 24px;background:#fff;border-bottom:1px solid #e6ebf2;overflow-x:auto;white-space:nowrap;scrollbar-width:thin;position:relative;z-index:2}
+.system-nav a,.system-nav button{flex:0 0 auto;border:0;border-radius:8px;padding:9px 12px;background:transparent;color:#52627a;text-decoration:none;font:600 12px Inter,Segoe UI,Arial,sans-serif;cursor:pointer}
+.system-nav a:hover,.system-nav a.active{background:#edf3ff;color:#174ea6}
+.system-nav button{margin-left:auto;color:#b42318}
+.system-nav button:hover{background:#fff0ed}
+.table-scroll{width:100%;overflow:auto}
+.message{min-height:1.2em;margin:9px 0;color:#b42318;font-size:13px}
+.message[data-state=success]{color:#15803d}
+.message:empty{display:none}
+.empty-row{text-align:center;color:#718096;padding:22px!important}
+.action-cell{display:flex;gap:7px;flex-wrap:wrap}
+.action-button{border:0;border-radius:7px;padding:7px 10px;background:#edf3ff;color:#174ea6;font-size:11px;font-weight:700;cursor:pointer}
+.action-button.danger{background:#fff0ed;color:#b42318}
+@media(max-width:650px){.system-nav{padding:8px 12px;gap:3px}.system-nav a,.system-nav button{padding:9px 10px;font-size:11px}.system-nav button{margin-left:0}.table-scroll{margin-right:-5px}.data-table{min-width:680px}}

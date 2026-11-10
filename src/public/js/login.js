@@ -67,6 +67,7 @@ document.addEventListener("DOMContentLoaded", () => {
       message.textContent = `Login realizado. Olá, ${data.empresa.nome}.`;
       message.dataset.state = "success";
       senhaInput.value = "";
+      window.location.assign("/home");
     } catch (error) {
       message.textContent = error instanceof TypeError
         ? "Não foi possível conectar à API. Confira se o servidor está iniciado."

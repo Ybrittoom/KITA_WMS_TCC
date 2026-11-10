@@ -99,6 +99,87 @@ export async function listarMovimentacoesDoLocal(empresaId, estoqueId) {
   return resultado.rows;
 }
 
+/** Busca o historico geral da empresa com filtros opcionais e limite seguro. */
+export async function listarHistoricoDaEmpresa(empresaId, filtros) {
+  const condicoes = ["ep.empresa_id = $1"];
+  const valores = [empresaId];
+  const adicionarFiltro = (sql, valor) => {
+    valores.push(valor);
+    condicoes.push(sql.replace("?", `$${valores.length}`));
+  };
+
+  if (filtros.tipo) adicionarFiltro("ep.tipo = ?", filtros.tipo);
+  if (filtros.busca) {
+    valores.push(`%${filtros.busca}%`);
+    condicoes.push(`(p.nome ILIKE $${valores.length} OR p.sku ILIKE $${valores.length})`);
+  }
+  if (filtros.dataInicio) adicionarFiltro("ep.data::date >= ?::date", filtros.dataInicio);
+  if (filtros.dataFim) adicionarFiltro("ep.data::date <= ?::date", filtros.dataFim);
+  valores.push(filtros.limite);
+
+  const resultado = await pool.query(
+    `SELECT ep.id, ep.estoque_id, e.nome AS local_nome, ep.produto_id,
+            p.nome AS produto_nome, p.sku, ep.tipo, ep.quantidade,
+            ep.saldo_atual, ep.data
+     FROM public.estoque_produto AS ep
+     JOIN public.produtos AS p
+       ON p.id = ep.produto_id AND p.empresa_id = ep.empresa_id
+     JOIN public.estoques AS e
+       ON e.id = ep.estoque_id AND e.empresa_id = ep.empresa_id
+     WHERE ${condicoes.join(" AND ")}
+     ORDER BY ep.id DESC
+     LIMIT $${valores.length}`,
+    valores
+  );
+  return resultado.rows;
+}
+
+/** Resume os saldos em todos os locais e devolve as movimentacoes recentes. */
+export async function buscarResumoDashboard(empresaId) {
+  const resumo = await pool.query(
+    `WITH ultimos_saldos AS (
+       SELECT DISTINCT ON (ep.estoque_id, ep.produto_id)
+              ep.estoque_id, ep.produto_id, ep.saldo_atual
+       FROM public.estoque_produto AS ep
+       WHERE ep.empresa_id = $1
+       ORDER BY ep.estoque_id, ep.produto_id, ep.id DESC
+     ), totais_produtos AS (
+       SELECT p.id, p.estoque_minimo,
+              COALESCE(SUM(us.saldo_atual), 0)::bigint AS saldo
+       FROM public.produtos AS p
+       LEFT JOIN ultimos_saldos AS us ON us.produto_id = p.id
+       WHERE p.empresa_id = $1 AND p.ativo = true
+       GROUP BY p.id, p.estoque_minimo
+     )
+     SELECT
+       (SELECT COUNT(*) FROM public.produtos WHERE empresa_id = $1 AND ativo = true) AS produtos,
+       (SELECT COUNT(*) FROM public.estoques WHERE empresa_id = $1) AS locais,
+       COALESCE((SELECT SUM(saldo) FROM totais_produtos), 0) AS unidades,
+       (SELECT COUNT(*) FROM totais_produtos WHERE saldo <= estoque_minimo) AS estoque_baixo,
+       COALESCE((SELECT SUM(quantidade) FROM public.estoque_produto
+         WHERE empresa_id = $1 AND tipo = 'entrada'
+           AND data >= (date_trunc('day', now() AT TIME ZONE 'America/Sao_Paulo') AT TIME ZONE 'America/Sao_Paulo')), 0) AS entradas_hoje,
+       COALESCE((SELECT SUM(quantidade) FROM public.estoque_produto
+         WHERE empresa_id = $1 AND tipo = 'saida'
+           AND data >= (date_trunc('day', now() AT TIME ZONE 'America/Sao_Paulo') AT TIME ZONE 'America/Sao_Paulo')), 0) AS saidas_hoje`,
+    [empresaId]
+  );
+
+  const recentes = await pool.query(
+    `SELECT ep.id, ep.tipo, ep.quantidade, ep.saldo_atual, ep.data,
+            p.nome AS produto_nome, p.sku, e.nome AS local_nome
+     FROM public.estoque_produto AS ep
+     JOIN public.produtos AS p ON p.id = ep.produto_id AND p.empresa_id = ep.empresa_id
+     JOIN public.estoques AS e ON e.id = ep.estoque_id AND e.empresa_id = ep.empresa_id
+     WHERE ep.empresa_id = $1
+     ORDER BY ep.id DESC
+     LIMIT 6`,
+    [empresaId]
+  );
+
+  return { ...resumo.rows[0], recentes: recentes.rows };
+}
+
 /** Devolve os enderecos fisicos e o produto atualmente guardado em cada um. */
 export async function listarEnderecosDoMapa(empresaId, estoqueId) {
   const resultado = await pool.query(
@@ -285,7 +366,8 @@ export async function inserirMovimentacaoDaEmpresa(empresaId, dados, calcularNov
       `INSERT INTO public.estoque_produto
          (empresa_id, estoque_id, produto_id, tipo, quantidade, saldo_atual)
        VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING id, estoque_id, produto_id, tipo, quantidade, saldo_atual, data`,
+       RETURNING id, estoque_id, produto_id, tipo, quantidade,
+                 saldo_atual, data`,
       [
         empresaId,
         dados.estoque_id,

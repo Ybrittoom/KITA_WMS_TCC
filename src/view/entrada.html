@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KITA WMS | Entrada de estoque</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/public/css/wmsSystem.css"><link rel="stylesheet" href="/public/css/systemShell.css">
+</head><body><div class="layout"><main class="main">
+  <header class="topbar"><div class="crumb">KITA WMS&nbsp; / &nbsp;<b>Entrada de estoque</b></div><div class="top-actions"><div class="company"><div class="company-mark">K</div><span id="company-name">Carregando...</span></div></div></header>
+  <div class="content">
+    <div class="welcome"><div><div class="eyebrow">RECEBIMENTO</div><h1>Registrar entrada</h1><p>Informe o produto e a quantidade recebida para atualizar o saldo.</p></div></div>
+    <p id="operation-message" class="message" role="status" aria-live="polite"></p>
+    <section class="panel">
+      <div class="section-head"><h3>Nova entrada</h3><span>O saldo é atualizado para o local selecionado</span></div>
+      <form id="operation-form" data-operation="entrada">
+        <div class="form-grid">
+          <div class="form-group"><label for="operation-location">Local de destino</label><select id="operation-location" class="form-control" required><option value="">Carregando locais...</option></select></div>
+          <div class="form-group"><label for="operation-product">Produto</label><select id="operation-product" class="form-control" required><option value="">Carregando produtos...</option></select></div>
+          <div class="form-group"><label for="operation-quantity">Quantidade recebida</label><input id="operation-quantity" class="form-control" type="number" min="1" step="1" required placeholder="Ex.: 50"></div>
+        </div>
+        <div style="margin-top:18px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+          <a href="/estoque/movimentacoes" class="btn" style="background:#edf3ff;color:#174ea6">Abrir tela completa com leitor e saldo</a>
+          <button type="submit" class="btn btn-blue" id="operation-submit">↓ Confirmar entrada</button>
+        </div>
+      </form>
+    </section>
+    <section class="panel"><div class="alert"><div class="alert-icon">i</div><div><strong>Conferência de recebimento</strong><p>Confira o produto, o local e a quantidade antes de registrar. O sistema guarda a operação no histórico e recalcula o saldo.</p></div></div></section>
+  </div>
+</main></div>
+<script src="/public/js/systemShell.js" defer></script><script src="/public/js/operacaoEstoque.js" defer></script>
+</body></html>

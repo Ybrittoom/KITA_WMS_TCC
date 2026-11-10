@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KITA WMS | Painel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/public/css/wmsSystem.css">
+  <link rel="stylesheet" href="/public/css/systemShell.css">
+</head>
+<body>
+  <div class="layout"><main class="main">
+    <header class="topbar">
+      <div class="crumb">KITA WMS&nbsp; / &nbsp;<b>Painel</b></div>
+      <div class="top-actions"><div class="company"><div class="company-mark">K</div><span id="company-name">Carregando empresa...</span></div></div>
+    </header>
+    <div class="content">
+      <div class="welcome">
+        <div><div class="eyebrow">PAINEL DE CONTROLE</div><h1>Visão geral do estoque</h1><p>Acompanhe os produtos e as movimentações da sua empresa.</p></div>
+        <div class="date" id="today"></div>
+      </div>
+      <p id="dashboard-message" class="message" role="status" aria-live="polite"></p>
+
+      <section class="hero">
+        <div class="hero-content">
+          <div class="eyebrow">KITA WMS · GESTÃO VISUAL</div>
+          <h2>Seu estoque organizado em um só lugar.</h2>
+          <p>Cadastre produtos, registre entradas e saídas e encontre endereços no mapa físico.</p>
+          <div class="hero-buttons">
+            <a href="/produtos" class="btn btn-primary">＋ Cadastrar produto</a>
+            <a href="/estoque/entrada" class="btn btn-ghost">Registrar entrada</a>
+          </div>
+        </div>
+      </section>
+
+      <div class="section-head"><h3>Resumo atualizado</h3><span>Dados da empresa autenticada</span></div>
+      <section class="stats">
+        <article class="stat"><div class="stat-top"><span class="stat-label">Produtos ativos</span><div class="stat-icon" style="background:#edf3ff;color:#2458b5">▦</div></div><div class="stat-number" id="stat-products">—</div><div class="stat-foot">Cadastrados no sistema</div></article>
+        <article class="stat"><div class="stat-top"><span class="stat-label">Unidades em estoque</span><div class="stat-icon" style="background:#e7f8f0;color:#15966a">□</div></div><div class="stat-number" id="stat-units">—</div><div class="stat-foot">Somadas entre os locais</div></article>
+        <article class="stat"><div class="stat-top"><span class="stat-label">Entradas hoje</span><div class="stat-icon" style="background:#e7f8f0;color:#15966a">↓</div></div><div class="stat-number" id="stat-entries">—</div><div class="stat-foot">Unidades recebidas hoje</div></article>
+        <article class="stat"><div class="stat-top"><span class="stat-label">Saídas hoje</span><div class="stat-icon" style="background:#fff0ed;color:#dc4c4c">↑</div></div><div class="stat-number" id="stat-exits">—</div><div class="stat-foot">Unidades retiradas hoje</div></article>
+        <article class="stat"><div class="stat-top"><span class="stat-label">Produtos no mínimo</span><div class="stat-icon" style="background:#fff5df;color:#d97706">!</div></div><div class="stat-number" id="stat-low">—</div><div class="stat-foot">Saldo igual ou abaixo do mínimo</div></article>
+        <article class="stat"><div class="stat-top"><span class="stat-label">Locais de estoque</span><div class="stat-icon" style="background:#edf3ff;color:#2458b5">⌖</div></div><div class="stat-number" id="stat-locations">—</div><div class="stat-foot">Cadastrados pela empresa</div></article>
+      </section>
+
+      <div class="columns">
+        <section class="panel">
+          <div class="section-head"><h3>Acesso rápido</h3><span>Escolha uma operação</span></div>
+          <div class="quick-grid">
+            <a href="/produtos" class="quick"><div class="quick-icon">＋</div><strong>Produtos</strong><small>Cadastre, edite, consulte ou inative itens.</small></a>
+            <a href="/estoque/entrada" class="quick"><div class="quick-icon">↓</div><strong>Registrar entrada</strong><small>Some quantidades ao saldo de um local.</small></a>
+            <a href="/estoque/saida" class="quick"><div class="quick-icon">↑</div><strong>Registrar saída</strong><small>Retire quantidades disponíveis do estoque.</small></a>
+            <a href="/estoque/mapa" class="quick"><div class="quick-icon">⌖</div><strong>Mapa físico</strong><small>Consulte e organize endereços dos produtos.</small></a>
+          </div>
+        </section>
+        <section class="panel">
+          <div class="section-head"><h3>Movimentações recentes</h3><a href="/estoque/historico" class="btn" style="background:#edf3ff;color:#174ea6;padding:8px 10px">Ver histórico →</a></div>
+          <div class="history-list" id="recent-movements"><p class="empty-row">Carregando movimentações...</p></div>
+        </section>
+      </div>
+
+      <div class="bottom-grid">
+        <section class="panel">
+          <div class="section-head"><h3>Alerta de reposição</h3><span id="low-stock-caption">Carregando...</span></div>
+          <div class="alert"><div class="alert-icon">!</div><div><strong id="low-stock-title">Consultando saldos</strong><p id="low-stock-description">O painel compara os saldos registrados com o estoque mínimo de cada produto.</p></div></div>
+          <a href="/produtos" class="btn" style="margin-top:13px;background:#fff5df;color:#9a5a00;display:inline-block">Consultar produtos →</a>
+        </section>
+        <section class="panel">
+          <div class="section-head"><h3>Organização</h3><a href="/estoque/locais">Gerenciar locais →</a></div>
+          <p>Os endereços por corredor, estante, prateleira e posição ficam disponíveis no mapa visual.</p>
+          <a href="/estoque/mapa" class="btn btn-blue" style="margin-top:15px">Abrir mapa do estoque</a>
+        </section>
+      </div>
+      <div class="footer">KITA WMS · Painel de gestão de estoque</div>
+    </div>
+  </main></div>
+  <script src="/public/js/systemShell.js" defer></script>
+  <script src="/public/js/dashboard.js" defer></script>
+</body>
+</html>
